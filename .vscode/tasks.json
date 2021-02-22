@@ -1,0 +1,74 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "stop emulation",
+            "type": "shell",
+            "windows": {
+                "command": "taskkill /im mGBA.exe /F"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "make debug",
+            "type": "process",
+            "command": "make",
+            "args": [
+                "DEBUG=1", //"-B"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "make release",
+            "type": "process",
+            "command": "make",
+            "args": [
+                "DEBUG=0", "-B"
+            ],
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "clean",
+            "type": "shell",
+            "command": "make clean",
+            "problemMatcher": []
+        },
+        {
+            "label": "gdb-debug",
+            "type": "shell",
+            "dependsOn": [
+                "make debug"
+            ],
+            "isBackground": false,
+            "windows": {
+                "command": "D:/Documents/GBA/mGBA/mGBA.exe -g ${workspaceFolder}/${workspaceFolderBasename}.gba"
+            },
+            "presentation": {
+                "clear": true,
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "run",
+            "type": "shell",
+            "isBackground": true,
+            "command": "D:/Documents/GBA/mGBA/mGBA.exe ${workspaceFolder}/${workspaceFolderBasename}.gba",
+            "problemMatcher": []
+        },
+        {
+            "label": "run no$gba",
+            "type": "shell",
+            "isBackground": true,
+            "command": "D:/Documents/GBA/no$gba/NO$GBA.exe  ${workspaceFolder}/${workspaceFolderBasename}.elf",
+            "problemMatcher": []
+        }
+    ]
+} 

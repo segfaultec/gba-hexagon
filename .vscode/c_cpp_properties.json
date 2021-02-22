@@ -1,0 +1,38 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}",
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/build",
+                "D:/Documents/GBA/devkitPro/devkitARM/arm-none-eabi/include",
+                "D:/Documents/GBA/devkitPro/libgba/include",
+                "D:/Documents/GBA/devkitPro/devkitARM/lib/gcc/arm-none-eabi/10.2.0/include"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "ARM7",
+                "WIN32"
+            ],
+            "intelliSenseMode": "gcc-arm",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}",
+                    "${workspaceFolder}/include",
+                    "${workspaceFolder}/build",
+                    "D:/Documents/GBA/devkitPro/devkitARM/arm-none-eabi/include",
+                    "D:/Documents/GBA/devkitPro/libgba/include",
+                    "D:/Documents/GBA/devkitPro/devkitARM/lib/gcc/arm-none-eabi/10.2.0/include"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            },
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}
