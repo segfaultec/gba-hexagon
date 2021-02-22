@@ -22,11 +22,6 @@ typedef struct __gbacolor {
 	bool _unused : 1;
 } PK_AL(2) Color;
 
-// void setcolor(Color color) {
-// 	u16* BGPALETTE = (u16*)0x5000000;
-// 	BGPALETTE[0] = REINT_CAST(u16, color);
-// }
-
 u8 Lerp8(u8 A, u8 B, u8 F) {
     if (F == 0) return A;
     if (F == 0xFF) return B;
@@ -43,52 +38,10 @@ Color mixcolor(Color a, Color b, u8 mix) {
 
 const u8 hello_world_indexes[] = {1,2,3,3,4,9,5,4,6,3,7,8};
 
-static u8 bg_gradient = 0;
-static s8 bg_grad_dir = 1;
-static s8 bg_grad_speed = 5;
-
-static u32 hblank_wait = 0;
-
-void irq_hblank()
-{
-	const Color red = {20,30,0};
-	const Color blue = {25,17,5};
-	
-	Color* bgpalette = (Color*)BG_COLORS;
-
-	bgpalette[0] = mixcolor(red, blue, bg_gradient);
-
-	u8 newgradient = bg_gradient;
-	if (bg_grad_dir > 0) {
-		newgradient += bg_grad_speed;
-		if (newgradient < bg_gradient) {
-			bg_grad_dir *= -1;
-		} else {
-			bg_gradient = newgradient;
-		}
-	} else {
-		newgradient -= bg_grad_speed;
-		if (newgradient > bg_gradient) {
-			bg_grad_dir *= -1;
-		} else {
-			bg_gradient = newgradient;
-		}
-	}
-
-	for (int i=0; i<hblank_wait; i++) {
-		hblank_wait++;
-		hblank_wait--;
-	}
-
-	REG_IF = IRQ_HBLANK;
-}
-
 int main(void) {
 
 	irqInit();
-	irqEnable(IRQ_VBLANK | IRQ_HBLANK);
-
-	irqSet(IRQ_HBLANK, irq_hblank);
+	irqEnable(IRQ_VBLANK);
 
 	struct16z(dispcnt_data,
 		/* 0-2 */ unsigned int bg_mode : 3;
@@ -152,26 +105,10 @@ int main(void) {
 	CpuFastSet(font_img_bin, (u16*)VRAM,(font_img_bin_size/4) | COPY32);
 
 	while (1) {
-		if (KEY_HELD(Down)) {
-			bg_grad_speed += 1;
-		}
-		if (KEY_HELD(Up)) {
-			bg_grad_speed -= 1;
-		}
-		if (KEY_HELD(Right)) {
-			hblank_wait += 1;
-		}
-		if (KEY_HELD(Left)) {
-			if (hblank_wait > 1)
-				hblank_wait -= 1;
-			else
-				hblank_wait = 0;
-		}
+		// Code goes here!
 
 		UpdateKeyDown();
 		VBlankIntrWait();
-
-		bg_gradient = 0;
 	}
 
 }
