@@ -2,5 +2,11 @@
     "files.associations": {
         "cstdlib": "c",
         "typeinfo": "c"
+    },
+    "folding": {
+        "*": {
+            "begin": "//#",
+            "end": "//#"
+        }
     }
 }
