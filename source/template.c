@@ -7,7 +7,8 @@
 #include <gba_types.h>
 #include <gba_input.h>
 
-#include "string.h"
+#include <string.h>
+#include <math.h>
 
 #include "macros.h"
 #include "input.h"
@@ -40,7 +41,7 @@ Color mixcolor(Color a, Color b, u8 mix) {
 	return a;
 }
 
-void Copy8x8TileArea(void* source, void* dest, u8 width, u8 height) {
+void Copy8x8TileArea(void* source, void* dest, u32 width, u32 height) {
 	const u32 tile_word_size = 0x8;
 	const u32 row_size = 0x400;
 
@@ -55,23 +56,42 @@ void Copy8x8TileArea(void* source, void* dest, u8 width, u8 height) {
 	}
 }
 
-void WriteToOAM(const struct oam_norot* data, u8 index) {
-
-	u32 upper = ((u32*)data)[0];
-	u32 lower = ((u32*)data)[1];
-	
-	OAM[index*2] = upper;
-	OAM[index*2 + 1] = lower;
+void* GetOAMPointer(u8 index) {
+	return OAM + (sizeof(struct oam_regular) * index);
 }
 
-void WriteToOAM_Rot(const struct oam_rot* data, u8 index) {
-	WriteToOAM((const struct oam_norot*)data, index);
+struct oam_affine_param* GetOAMAffinePointer(u8 index) {
+	return (void*)OAM + (sizeof(struct oam_affine_param) * index);
+}
+
+void WriteToOAM(const void* data, u8 index) {
+/* 
+	Only the first 6 bytes of each entry to OAM is the object data.
+	The last two bytes are reserved for the rotation/scaling params.
+
+	This weirdness makes sure the last two bytes are untouched.
+*/
+	u32 upper = ((u32*)data)[0];
+	u16 lower = ((u16*)data)[3];
+
+	OAM[index*2] = upper;
+	((u16*)OAM)[index*4 + 2] = lower;
+}
+
+void WriteToOAMUpper(const void* data, u8 index) {
+/*
+	Same as before but only writes the first 4 bytes.
+	Most of the time we don't care about the index/palette,
+	and this is way faster than that nonsense above.
+*/
+
+	OAM[index*2] = *((u32*)data);
 }
 
 const u8 hello_world_indexes[] = {1,2,3,3,4,9,5,4,6,3,7,8};
 
 int main(void) {
-
+//#
 	irqInit();
 	irqEnable(IRQ_VBLANK);
 
@@ -105,8 +125,8 @@ int main(void) {
 	} 
 	
 	CpuFastSet(font_img_bin, (u16*)VRAM,(font_img_bin_size/4) | COPY32);
-	
-	const struct oam_norot empty_sprite = {
+//#
+	const struct oam_regular empty_sprite = {
 		.disabled = true
 	};
 
@@ -114,12 +134,14 @@ int main(void) {
 	WriteToOAM(&empty_sprite, 0);
 	CpuFastSet(OAM, OAM, FILL | COPY32 | (256));
 
-	const struct oam_norot sprite_base = {
+	const struct oam_affine sprite_base = {
+		.affine_enabled = true,
 		.shape = OBJ_SHAPE_SQUARE,
 		.size = OBJ_SIZE_16,
 		.x = 100,
 		.y = 100,
-		.tile = 0
+		.tile = 0,
+		.affine_param_index = 0
 	};
 
 	WriteToOAM(&sprite_base, 0);
@@ -130,11 +152,24 @@ int main(void) {
 	//CpuFastSet(arrow_img_bin, obj_tile_addr, (arrow_img_bin_size/4) | COPY32);
 
 	for (u8 i=0; i<arrow_pal_bin_size; i++) {
-		((u8*)OBJ_COLORS)[i] = arrow_pal_bin[i];
-	}
+		((vu8*)OBJ_COLORS)[i] = arrow_pal_bin[i];
+	} 
+	
+
+	struct oam_affine* main_sprite = GetOAMPointer(0);
+
+	double counter = 0;
+
+	struct oam_affine_param* main_affine = GetOAMAffinePointer(0);
+	main_affine->pa =  main_affine->pd = 1<<8;
+	main_affine->pb = main_affine->pc = 0;
 
 	while (1) {
 		// Code goes here!
+
+		main_sprite->x = 100 + 20 * sin(counter);
+
+		counter += 0.1;
 
 		UpdateKeyDown();
 		VBlankIntrWait();

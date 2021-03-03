@@ -71,9 +71,9 @@ enum OBJ_SIZE {
     OBJ_SIZE_64 = 3
 };
 
-struct oam_norot {
+struct oam_regular {
     /* 0-7 */ unsigned int y : 8;
-    /*FALSE*/ bool rotation_and_scaling_enabled : 1;
+    /*FALSE*/ bool affine_enabled : 1;
     /* 9   */ bool disabled : 1;
     /*10-11*/ enum OBJ_MODE mode : 2;
     /* 12  */ bool mosaic_enabled : 1;
@@ -90,14 +90,14 @@ struct oam_norot {
     /*10-11*/ unsigned int priority : 2;
     /*12-15*/ unsigned int pallette : 3;
 
-    unsigned int __filler : 16;
+    unsigned int __affine_param_space : 16;
 } PK_AL(4);
 
-const struct oam_norot oam_norot_zero = { .rotation_and_scaling_enabled = 0 };
+const struct oam_regular oam_norot_zero = { .affine_enabled = 0 };
 
-struct oam_rot {
+struct oam_affine {
     /* 0-7 */ unsigned int y : 8;
-    /* TRUE*/ bool rotation_and_scaling_enabled : 1;
+    /* TRUE*/ bool affine_enabled : 1;
     /* 9   */ bool double_size_enabled : 1;
     /*10-11*/ enum OBJ_MODE mode : 2;
     /* 12  */ bool mosaic_enabled : 1;
@@ -105,18 +105,34 @@ struct oam_rot {
     /*14-15*/ enum OBJ_SHAPE shape : 2;
 
     /* 0-8 */ unsigned int x : 9;
-    /* 9-13*/ unsigned int rotscale_param_index : 4;
+    /* 9-13*/ unsigned int affine_param_index : 5;
     /*14-15*/ enum OBJ_SIZE size : 2;
 
     /* 0-9 */ unsigned int tile : 10;
     /*10-11*/ unsigned int priority : 2;
-    /*12-15*/ unsigned int pallette : 3;
+    /*12-15*/ unsigned int pallette : 4;
 
-    unsigned int __filler : 16;
+    unsigned int __affine_param_space : 16;
 } PK_AL(4);
 
-const struct oam_rot oam_rot_zero = { .rotation_and_scaling_enabled = 1 };
+const struct oam_affine oam_rot_zero = { .affine_enabled = 1 };
+
+struct oam_affine_param {
+    u16 __filler1[3];
+    s16 pa;
+    u16 __filler2[3];
+    s16 pb;
+    u16 __filler3[3];
+    s16 pc;
+    u16 __filler4[3];
+    s16 pd;
+
+} PK_AL(4);
 
 u32* OAM = (u32*)0x07000000;
+
+//#
+
+//# OAM Rotation/Scaling Params
 
 //#

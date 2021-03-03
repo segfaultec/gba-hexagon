@@ -34,7 +34,7 @@ ARCH	:=	-mthumb -mthumb-interwork
 # 			$(ARCH)
 
 ifeq ($(DEBUG),1)
-CFLAGS := -gdwarf-2 -Wall -mcpu=arm7tdmi -mtune=arm7tdmi $(ARCH)
+CFLAGS := -gdwarf-2 -Wall -mcpu=arm7tdmi -mtune=arm7tdmi $(ARCH) 
 else
 CFLAGS:= -g -Wall -O3 -mcpu=arm7tdmi -mtune=arm7tdmi -fomit-frame-pointer -ffast-math $(ARCH)
 endif
@@ -52,7 +52,7 @@ export PATH		:=	$(DEVKITARM)/bin:$(PATH)
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-LIBS	:=	-lgba
+LIBS	:=	-lgba -lm
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
