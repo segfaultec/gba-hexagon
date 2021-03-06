@@ -1,7 +1,7 @@
 #pragma once
 
 #include "macros.h"
-
+#include "fixed.h"
 
 //# Display Control
 
@@ -117,22 +117,21 @@ struct oam_affine {
 
 const struct oam_affine oam_rot_zero = { .affine_enabled = 1 };
 
-struct oam_affine_param {
-    u16 __filler1[3];
-    s16 pa;
-    u16 __filler2[3];
-    s16 pb;
-    u16 __filler3[3];
-    s16 pc;
-    u16 __filler4[3];
-    s16 pd;
-
-} PK_AL(4);
-
 u32* OAM = (u32*)0x07000000;
 
 //#
 
 //# OAM Rotation/Scaling Params
+
+struct oam_affine_param {
+    u16 __filler1[3];
+    fixed16 pa;
+    u16 __filler2[3];
+    fixed16 pb;
+    u16 __filler3[3];
+    fixed16 pc;
+    u16 __filler4[3];
+    fixed16 pd;
+} PK_AL(4);
 
 //#

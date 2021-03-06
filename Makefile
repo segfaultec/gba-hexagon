@@ -41,6 +41,8 @@ endif
 
 CFLAGS	+=	$(INCLUDE)
 
+# CFLAGS += -save-temps=obj
+
 ASFLAGS	:=	$(ARCH)
 LDFLAGS	=	-g $(ARCH) -Wl,-Map,$(notdir $@).map
 
