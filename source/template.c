@@ -8,11 +8,13 @@
 #include <gba_input.h>
 
 #include <string.h>
-#include <math.h>
+
+#include "math.h"
 
 #include "macros.h"
 #include "input.h"
 #include "lcd.h"
+#include "fixed.h"
 
 #include "font_img_bin.h"
 #include "font_pal_bin.h"
@@ -60,7 +62,7 @@ void* GetOAMPointer(u8 index) {
 	return OAM + (sizeof(struct oam_regular) * index);
 }
 
-struct oam_affine_param* GetOAMAffinePointer(u8 index) {
+volatile struct oam_affine_param* GetOAMAffinePointer(u8 index) {
 	return (void*)OAM + (sizeof(struct oam_affine_param) * index);
 }
 
@@ -88,13 +90,30 @@ void WriteToOAMUpper(const void* data, u8 index) {
 	OAM[index*2] = *((u32*)data);
 }
 
+void CalcRotationMatrix(volatile struct oam_affine_param* ptr, fixed32 angle, fixed32 scale) {
+
+	// Temporary slow calculation,
+	// to replace with lookup tables.
+
+	// [ pa  pb ]
+	// [ pc  pd ]
+
+	fixed32 calc_sin = fx_from_float(sinf(fx_to_float(angle)));
+	fixed32 calc_cos = fx_from_float(cosf(fx_to_float(angle)));
+
+	ptr->pa = fx_division(calc_cos, scale);
+	ptr->pb = fx_division(-calc_sin, scale);
+	ptr->pc = fx_division(calc_sin, scale);
+	ptr->pd = fx_division(calc_cos, scale);
+}
+
 const u8 hello_world_indexes[] = {1,2,3,3,4,9,5,4,6,3,7,8};
 
 int main(void) {
 //#
 	irqInit();
 	irqEnable(IRQ_VBLANK);
-
+	
 	struct dispcnt* dispcnt = (struct dispcnt*)0x4000000;
 	*dispcnt = dispcnt_zero;
 	dispcnt->bg_mode = 0;
@@ -126,6 +145,8 @@ int main(void) {
 	
 	CpuFastSet(font_img_bin, (u16*)VRAM,(font_img_bin_size/4) | COPY32);
 //#
+
+//#
 	const struct oam_regular empty_sprite = {
 		.disabled = true
 	};
@@ -141,8 +162,10 @@ int main(void) {
 		.x = 100,
 		.y = 100,
 		.tile = 0,
+		.double_size_enabled = true,
 		.affine_param_index = 0
 	};
+	
 
 	WriteToOAM(&sprite_base, 0);
 
@@ -154,22 +177,40 @@ int main(void) {
 	for (u8 i=0; i<arrow_pal_bin_size; i++) {
 		((vu8*)OBJ_COLORS)[i] = arrow_pal_bin[i];
 	} 
-	
+
+//#
 
 	struct oam_affine* main_sprite = GetOAMPointer(0);
 
-	double counter = 0;
+	fixed32 counter = 0;
 
-	struct oam_affine_param* main_affine = GetOAMAffinePointer(0);
-	main_affine->pa =  main_affine->pd = 1<<8;
-	main_affine->pb = main_affine->pc = 0;
+	volatile struct oam_affine_param* main_affine = GetOAMAffinePointer(0);
+
 
 	while (1) {
 		// Code goes here!
 
-		main_sprite->x = 100 + 20 * sin(counter);
+		fixed32 sin_counter = fx_from_float(sinf(fx_to_float(counter)));
 
-		counter += 0.1;
+		CalcRotationMatrix(
+			main_affine,
+			counter,
+			fx_division(sin_counter, fx_from_int(2)) + fx_from_float(1.5)
+		);
+
+		//main_sprite->x = 100;
+		main_sprite->x = fx_to_int(
+			fx_from_int(100) + 
+			fx_multiply(
+				fx_from_int(20),
+				sin_counter
+			)
+		);
+
+		counter += fx_from_float(0.1);
+		// if (counter > M_PI * 4) {
+		// 	counter -= M_PI * 2;
+		// }
 
 		UpdateKeyDown();
 		VBlankIntrWait();
