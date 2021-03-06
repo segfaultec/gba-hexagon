@@ -181,7 +181,6 @@ int main(void) {
 
 	volatile struct oam_affine_param* main_affine = GetOAMAffinePointer(0);
 
-
 	while (1) {
 		// Code goes here!
 
