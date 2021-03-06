@@ -9,8 +9,7 @@
 
 #include <string.h>
 
-#include "math.h"
-
+#include "trig.h"
 #include "macros.h"
 #include "input.h"
 #include "lcd.h"
@@ -91,15 +90,11 @@ void WriteToOAMUpper(const void* data, u8 index) {
 }
 
 void CalcRotationMatrix(volatile struct oam_affine_param* ptr, fixed32 angle, fixed32 scale) {
-
-	// Temporary slow calculation,
-	// to replace with lookup tables.
-
 	// [ pa  pb ]
 	// [ pc  pd ]
 
-	fixed32 calc_sin = fx_from_float(sinf(fx_to_float(angle)));
-	fixed32 calc_cos = fx_from_float(cosf(fx_to_float(angle)));
+	fixed32 calc_sin = my_sine(angle);
+	fixed32 calc_cos = my_cosine(angle);
 
 	ptr->pa = fx_division(calc_cos, scale);
 	ptr->pb = fx_division(-calc_sin, scale);
@@ -190,7 +185,7 @@ int main(void) {
 	while (1) {
 		// Code goes here!
 
-		fixed32 sin_counter = fx_from_float(sinf(fx_to_float(counter)));
+		fixed32 sin_counter = my_sine(counter);
 
 		CalcRotationMatrix(
 			main_affine,
