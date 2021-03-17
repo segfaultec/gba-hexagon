@@ -15,7 +15,8 @@
                 "UNICODE",
                 "_UNICODE",
                 "ARM7",
-                "WIN32"
+                "WIN32",
+                "__thumb__"
             ],
             "intelliSenseMode": "gcc-arm",
             "browse": {

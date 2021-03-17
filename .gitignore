@@ -4,3 +4,4 @@
 *.sav
 **/vba.ini
 *.patch
+**/.history

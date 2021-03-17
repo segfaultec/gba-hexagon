@@ -21,7 +21,7 @@
 #include "arrow_img_bin.h"
 #include "arrow_pal_bin.h"
 
-typedef struct __gbacolor {
+typedef struct Color {
 	unsigned int r : 5;
 	unsigned int b : 5;
 	unsigned int g : 5;
@@ -44,7 +44,7 @@ Color mixcolor(Color a, Color b, u8 mix) {
 
 void Copy8x8TileArea(void* source, void* dest, u32 width, u32 height) {
 	const u32 tile_word_size = 0x8;
-	const u32 row_size = 0x400;
+	const u32 row_size = 1024;
 
 	while (height-- > 0) {
 		CpuFastSet(
@@ -57,7 +57,7 @@ void Copy8x8TileArea(void* source, void* dest, u32 width, u32 height) {
 	}
 }
 
-void* GetOAMPointer(u8 index) {
+volatile void* GetOAMPointer(u8 index) {
 	return OAM + (sizeof(struct oam_regular) * index);
 }
 
@@ -72,11 +72,23 @@ void WriteToOAM(const void* data, u8 index) {
 
 	This weirdness makes sure the last two bytes are untouched.
 */
-	u32 upper = ((u32*)data)[0];
-	u16 lower = ((u16*)data)[3];
 
-	OAM[index*2] = upper;
-	((u16*)OAM)[index*4 + 2] = lower;
+	// This masks off the oam attribute quarter.
+	// It's backwards because of little-endian.
+	const u32 lower_mask = 0x0000FFFF;
+	u32* source = (u32*)data;
+	u32* dest = (u32*)OAM;
+
+	u32 upper = source[0];
+	u32 lower = source[1];
+
+	// Write to upper byte, as normal
+	dest[index*2] = upper;
+
+	lower &= lower_mask;
+	lower |= (dest[index*2+1] & (~lower_mask));
+
+	dest[index*2+1] = lower;
 }
 
 void WriteToOAMUpper(const void* data, u8 index) {
@@ -143,7 +155,7 @@ int main(void) {
 
 //#
 	const struct oam_regular empty_sprite = {
-		.disabled = true
+		.disabled = true,
 	};
 
 	// Clear OAM
@@ -152,21 +164,19 @@ int main(void) {
 
 	const struct oam_affine sprite_base = {
 		.affine_enabled = true,
+		.double_size_enabled = true,
 		.shape = OBJ_SHAPE_SQUARE,
 		.size = OBJ_SIZE_16,
 		.x = 100,
 		.y = 100,
 		.tile = 0,
-		.double_size_enabled = true,
-		.affine_param_index = 0
 	};
-	
 
 	WriteToOAM(&sprite_base, 0);
 
-	u16* obj_tile_addr = (u16*)0x6010000;
+	void* obj_tile_addr = (void*)0x6010000;
 
-	Copy8x8TileArea((u16*)arrow_img_bin, obj_tile_addr, 2, 2);
+	Copy8x8TileArea((void*)arrow_img_bin, obj_tile_addr, 2, 2);
 	//CpuFastSet(arrow_img_bin, obj_tile_addr, (arrow_img_bin_size/4) | COPY32);
 
 	for (u8 i=0; i<arrow_pal_bin_size; i++) {
@@ -175,7 +185,7 @@ int main(void) {
 
 //#
 
-	struct oam_affine* main_sprite = GetOAMPointer(0);
+	volatile struct oam_affine* main_sprite = GetOAMPointer(0);
 
 	fixed32 counter = 0;
 
@@ -189,7 +199,7 @@ int main(void) {
 		CalcRotationMatrix(
 			main_affine,
 			counter,
-			fx_division(sin_counter, fx_from_int(2)) + fx_from_float(1.5)
+			fx_division(sin_counter, fx_from_int(2)) + fx_from_float(1)
 		);
 
 		//main_sprite->x = 100;

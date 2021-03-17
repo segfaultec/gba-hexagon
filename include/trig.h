@@ -6,7 +6,7 @@
 const fixed32 pi = 804;
 const fixed32 tau = 1608;
 
-extern const fixed32 sin_lut[512];
+extern const fixed32 sin_lut[1024];
 
 INLINE fixed32 my_sine(fixed32 angle) {
     u32 lookup = (angle * 512 / pi) & 0x3ff;

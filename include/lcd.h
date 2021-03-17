@@ -93,7 +93,7 @@ struct oam_regular {
     unsigned int __affine_param_space : 16;
 } PK_AL(4);
 
-const struct oam_regular oam_norot_zero = { .affine_enabled = 0 };
+const struct oam_regular oam_regular_zero = { .affine_enabled = 0 };
 
 struct oam_affine {
     /* 0-7 */ unsigned int y : 8;
@@ -115,9 +115,11 @@ struct oam_affine {
     unsigned int __affine_param_space : 16;
 } PK_AL(4);
 
-const struct oam_affine oam_rot_zero = { .affine_enabled = 1 };
+const struct oam_affine oam_affine_zero = {
+    .affine_enabled = 1,
+};
 
-u32* OAM = (u32*)0x07000000;
+u32* const OAM = (u32*)0x07000000;
 
 //#
 
