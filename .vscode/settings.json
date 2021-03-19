@@ -3,7 +3,8 @@
         "cstdlib": "c",
         "typeinfo": "c",
         "gba_video.h": "c",
-        "gba_systemcalls.h": "c"
+        "gba_systemcalls.h": "c",
+        "arrow_img_bin.h": "c"
     },
     "folding": {
         "*": {

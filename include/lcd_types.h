@@ -22,7 +22,7 @@ struct dispcnt {
     /* 15  */ bool winobj_display_flag : 1;
 } PK_AL(2);
 
-const struct dispcnt dispcnt_zero = {};
+extern const struct dispcnt dispcnt_zero;
 
 struct bgcnt {
     /* 0-1 */ unsigned int priority : 2;
@@ -35,7 +35,7 @@ struct bgcnt {
     /*14-15*/ unsigned int screen_size : 2;
 } PK_AL(2);
 
-const struct bgcnt bgcnt_zero = {};
+extern const struct bgcnt bgcnt_zero;
 
 //#
 
@@ -93,7 +93,7 @@ struct oam_regular {
     unsigned int __affine_param_space : 16;
 } PK_AL(4);
 
-const struct oam_regular oam_regular_zero = { .affine_enabled = 0 };
+extern const struct oam_regular oam_regular_zero;
 
 struct oam_affine {
     /* 0-7 */ unsigned int y : 8;
@@ -115,11 +115,9 @@ struct oam_affine {
     unsigned int __affine_param_space : 16;
 } PK_AL(4);
 
-const struct oam_affine oam_affine_zero = {
-    .affine_enabled = 1,
-};
+extern const struct oam_affine oam_affine_zero;
 
-u32* const OAM = (u32*)0x07000000;
+extern u32* const OAM;
 
 //#
 

@@ -34,9 +34,9 @@ ARCH	:=	-mthumb -mthumb-interwork
 # 			$(ARCH)
 
 ifeq ($(DEBUG),1)
-CFLAGS := -gdwarf-2 -Wall -mcpu=arm7tdmi -mtune=arm7tdmi $(ARCH) 
+CFLAGS := -gdwarf-2 -Wall -Werror -mcpu=arm7tdmi -mtune=arm7tdmi $(ARCH) 
 else
-CFLAGS:= -g -Wall -O2 -mcpu=arm7tdmi -mtune=arm7tdmi -fomit-frame-pointer -ffast-math $(ARCH)
+CFLAGS:= -g -Wall -Werror -O2 -mcpu=arm7tdmi -mtune=arm7tdmi -fomit-frame-pointer -ffast-math $(ARCH)
 endif
 
 CFLAGS	+=	$(INCLUDE)
