@@ -16,78 +16,39 @@
 #include "color.h"
 #include "trig.h"
 
-static const u8 hello_world_indexes[] = {1,2,3,3,4,9,5,4,6,3,7,8};
-static fixed32 counter;
-
-static volatile struct oam_affine* m_main_sprite;
-static volatile struct oam_affine_param* m_main_affine;
 
 void game_init() {
     struct dispcnt* dispcnt = (struct dispcnt*)0x4000000;
 	*dispcnt = dispcnt_zero;
-	dispcnt->bg_mode = 0;
-	dispcnt->bg0_on = true;
-	dispcnt->obj_on = true;
-
-	for (u8 i=0; i<font_pal_bin_size; i++) {
-		((u8*)BG_COLORS)[i] = font_pal_bin[i];
-	}
-
-	const Color red = {12,0,0};
-	((Color*)BG_COLORS)[0] = red;
-
-	struct bgcnt* const bgcnt = (struct bgcnt*)BGCTRL;
-
-	*bgcnt = bgcnt_zero;
-	bgcnt->char_base_16k_block = 0;
-	bgcnt->screen_base_2k_block = 31;
-
-	struct bgmap* map = MAP_BASE_ADR(31);
-
-	// Clear Map
-	*(u32 *)MAP_BASE_ADR(31) = 0;
-	CpuFastSet(MAP_BASE_ADR(31), MAP_BASE_ADR(31), FILL | COPY32 | (0x800/4));
-
-	for (u8 i=0; i<sizeof(hello_world_indexes); i++) {
-		map[i].tile = hello_world_indexes[i];
-	} 
+	dispcnt->bg_mode = 4;
+	dispcnt->bg2_on = true;
+	dispcnt->obj_on = false;
 	
-	CpuFastSet(font_img_bin, (u16*)VRAM,(font_img_bin_size/4) | COPY32);
+	const Color black = {0, 0, 0};
+	const Color red = {31, 0, 0};
+	const Color white = {31, 31, 31};
+	const Color blue = {0, 0, 31};
 
-	const struct oam_regular empty_sprite = {
-		.disabled = true,
-	};
+	Color* const palette = (Color*)0x05000000;
+	palette[0] = black;
+	palette[1] = red;
+	palette[2] = white;
+	palette[3] = blue;
 
-	// Clear OAM
-	WriteToOAM(&empty_sprite, 0);
-	CpuFastSet(OAM, OAM, FILL | COPY32 | (256));
+	u32* const frame0 = (u32*)0x6000000;
+	u32* const frame1 = (u32*)0x600A000;
 
-	const struct oam_affine sprite_base = {
-		.affine_enabled = true,
-		.double_size_enabled = true,
-		.shape = OBJ_SHAPE_SQUARE,
-		.size = OBJ_SIZE_16,
-		.x = 100,
-		.y = 100,
-		.tile = 0,
-	};
+	const u32 frame_size = 0xA000;
 
-	WriteToOAM(&sprite_base, 0);
+	const u8 pixels_f0[4] = {0, 0, 2, 2};
+	frame0[0] = *(u32*)pixels_f0;
 
-	void* obj_tile_addr = (void*)0x6010000;
+	CpuFastSet(frame0, frame0, FILL | COPY32 | frame_size / 4 );
 
-	Copy8x8TileArea((void*)arrow_img_bin, obj_tile_addr, 2, 2);
-	//CpuFastSet(arrow_img_bin, obj_tile_addr, (arrow_img_bin_size/4) | COPY32);
+	const u8 pixels_f1[4] = {0, 0, 3, 3};
+	frame1[0] = *(u32*)pixels_f1;
 
-	for (u8 i=0; i<arrow_pal_bin_size; i++) {
-		((vu8*)OBJ_COLORS)[i] = arrow_pal_bin[i];
-	} 
-
-	m_main_sprite = GetOAMPointer(0);
-
-	counter = 0;
-
-	m_main_affine = GetOAMAffinePointer(0);
+	CpuFastSet(frame1, frame1, FILL | COPY32 | frame_size / 4 );
 }
 
 void init_bg() {
@@ -95,28 +56,7 @@ void init_bg() {
 }
 
 
-void game_update() {
-    // Code goes here!
-
-    fixed32 sin_counter = my_sine(counter);
-
-    CalcRotationMatrix(
-        m_main_affine,
-        counter,
-        fx_division(sin_counter, fx_from_int(2)) + fx_from_float(1)
-    );
-
-    //main_sprite->x = 100;
-    m_main_sprite->x = fx_to_int(
-        fx_from_int(100) + 
-        fx_multiply(
-            fx_from_int(20),
-            sin_counter
-        )
-    );
-
-    counter += fx_from_float(0.1);
-    // if (counter > M_PI * 4) {
-    // 	counter -= M_PI * 2;
-    // }
+void game_update() { 
+	struct dispcnt* dispcnt = (struct dispcnt*)0x4000000;
+	//dispcnt->display_frame_select = !dispcnt->display_frame_select;
 }

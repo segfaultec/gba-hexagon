@@ -33,13 +33,17 @@ ARCH	:=	-mthumb -mthumb-interwork
 # 			-ffast-math \
 # 			$(ARCH)
 
+SHARED_CFLAGS := -Wall -Werror  -mcpu=arm7tdmi -mtune=arm7tdmi $(ARCH) 
+SHARED_CFLAGS += -Wno-error=unused-variable -Wno-error=unused-const-variable
+
+
 ifeq ($(DEBUG),1)
-CFLAGS := -gdwarf-2 -Wall -Werror -mcpu=arm7tdmi -mtune=arm7tdmi $(ARCH) 
+CFLAGS := -gdwarf-2 
 else
-CFLAGS:= -g -Wall -Werror -O2 -mcpu=arm7tdmi -mtune=arm7tdmi -fomit-frame-pointer -ffast-math $(ARCH)
+CFLAGS:= -g -O2 -fomit-frame-pointer -ffast-math
 endif
 
-CFLAGS	+=	$(INCLUDE)
+CFLAGS	+= $(SHARED_CFLAGS)	$(INCLUDE)
 
 # CFLAGS += -save-temps=obj
 
