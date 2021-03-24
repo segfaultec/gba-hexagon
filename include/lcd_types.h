@@ -145,6 +145,12 @@ static u32* const OAM = (u32*)0x07000000;
 
 static struct dispcnt* const DISCNT = (struct dispcnt*)0x4000000;
 
+static struct bgcnt* const BGCNT0 = (struct bgcnt*)0x4000008;
+static struct bgcnt* const BGCNT1 = (struct bgcnt*)0x400000A;
+static struct bgcnt* const BGCNT2 = (struct bgcnt*)0x400000C;
+static struct bgcnt* const BGCNT3 = (struct bgcnt*)0x400000E;
+
+
 static Color* const BG_PALETTE = (Color*)0x05000000;
 
 static u32* const BG_BMP_FRAME0 = (u32*)0x6000000;
