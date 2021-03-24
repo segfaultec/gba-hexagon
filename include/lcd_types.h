@@ -23,7 +23,7 @@ struct dispcnt {
     /* 15  */ bool winobj_display_flag : 1;
 } PK_AL(2);
 
-extern const struct dispcnt dispcnt_zero;
+static const struct dispcnt dispcnt_zero = {};
 
 struct bgcnt {
     /* 0-1 */ unsigned int priority : 2;
@@ -36,7 +36,7 @@ struct bgcnt {
     /*14-15*/ unsigned int screen_size : 2;
 } PK_AL(2);
 
-extern const struct bgcnt bgcnt_zero;
+static const struct bgcnt bgcnt_zero = {};
 
 //#
 
@@ -94,7 +94,9 @@ struct oam_regular {
     unsigned int __affine_param_space : 16;
 } PK_AL(4);
 
-extern const struct oam_regular oam_regular_zero;
+static const struct oam_regular oam_regular_zero = { 
+    .affine_enabled = 0
+};
 
 struct oam_affine {
     /* 0-7 */ unsigned int y : 8;
@@ -116,7 +118,9 @@ struct oam_affine {
     unsigned int __affine_param_space : 16;
 } PK_AL(4);
 
-extern const struct oam_affine oam_affine_zero;
+static const struct oam_affine oam_affine_zero = {
+    .affine_enabled = 1,
+};
 
 //#
 
@@ -137,16 +141,14 @@ struct oam_affine_param {
 
 //# LCD Const Pointers
 
-extern u32* const OAM;
+static u32* const OAM = (u32*)0x07000000;
 
-extern struct dispcnt* const DISCNT;
+static struct dispcnt* const DISCNT = (struct dispcnt*)0x4000000;
 
-extern Color* const BG_PALETTE;
+static Color* const BG_PALETTE = (Color*)0x05000000;
 
-extern u32* const BG_BMP_FRAME0;
-extern u32* const BG_BMP_FRAME1;
-
-extern const u32 BG_BMP_FRAME_SIZE;
+static u32* const BG_BMP_FRAME0 = (u32*)0x6000000;
+static u32* const BG_BMP_FRAME1 = (u32*)0x600A000;
 
 //extern struct dispcnt* const DISPCNT;
 

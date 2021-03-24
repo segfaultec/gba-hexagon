@@ -3,8 +3,8 @@
 #include "types.h"
 #include "macros.h"
 
-extern const fixed32 pi;
-extern const fixed32 tau;
+static const fixed32 pi = 804;
+static const fixed32 tau = 1608;
 
 extern const fixed32 sin_lut[1024];
 

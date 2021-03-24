@@ -2,6 +2,7 @@
 
 #include "macros.h"
 
+//# Int defs
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -17,7 +18,9 @@ typedef	volatile u32	vu32;	/**< volatile Unsigned 32 bit value	*/
 typedef	volatile s8	vs8;	/**< volatile Signed 8 bit value	*/
 typedef	volatile s16	vs16;	/**< volatile Signed 8 bit value	*/
 typedef	volatile s32	vs32;	/**< volatile Signed 8 bit value	*/
+//#
 
+//# Fixed point
 // GBA 8.8 Fixed point decimal format
 
 // Used https://www.coranac.com/tonc/text/fixed.htm#sec-fmath
@@ -62,3 +65,13 @@ INLINE fixed32 fx_multiply(fixed32 fa, fixed32 fb) {
 INLINE fixed32 fx_division(fixed32 fa, fixed32 fb) {
     return ((fa)*FIX_SCALE)/(fb);
 }
+//#
+
+//#
+
+typedef struct Point {
+    u16 x;
+    u16 y;
+} Point;
+
+//#
