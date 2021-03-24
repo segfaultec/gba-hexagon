@@ -141,6 +141,8 @@ struct oam_affine_param {
 
 //# LCD Const Pointers
 
+static u32* const VRAM_BASE = (u32*)0x06000000;
+
 static u32* const OAM = (u32*)0x07000000;
 
 static struct dispcnt* const DISCNT = (struct dispcnt*)0x4000000;
@@ -150,6 +152,9 @@ static struct bgcnt* const BGCNT1 = (struct bgcnt*)0x400000A;
 static struct bgcnt* const BGCNT2 = (struct bgcnt*)0x400000C;
 static struct bgcnt* const BGCNT3 = (struct bgcnt*)0x400000E;
 
+INLINE struct bgmap* BG_MAP(u32 index) {
+    return (struct bgmap*)(VRAM_BASE + (index << 11));
+}
 
 static Color* const BG_PALETTE = (Color*)0x05000000;
 
