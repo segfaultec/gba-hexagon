@@ -32,7 +32,8 @@
                 "databaseFilename": ""
             },
             "cStandard": "c11",
-            "cppStandard": "c++17"
+            "cppStandard": "c++17",
+            "compilerPath": "D:/Documents/GBA/devkitPro/devkitARM/bin/arm-none-eabi-gcc.exe -mcpu=cortex-m4 -mthumb -mfloat-abi=hard"
         }
     ],
     "version": 4

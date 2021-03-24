@@ -1,6 +1,6 @@
 #pragma once
 
-#include "fixed.h"
+#include "types.h"
 #include "macros.h"
 
 extern const fixed32 pi;

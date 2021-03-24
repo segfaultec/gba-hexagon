@@ -1,7 +1,8 @@
 #pragma once
 
 #include "macros.h"
-#include "fixed.h"
+#include "types.h"
+#include "color.h"
 
 //# Display Control
 
@@ -117,8 +118,6 @@ struct oam_affine {
 
 extern const struct oam_affine oam_affine_zero;
 
-extern u32* const OAM;
-
 //#
 
 //# OAM Rotation/Scaling Params
@@ -133,5 +132,22 @@ struct oam_affine_param {
     u16 __filler4[3];
     fixed16 pd;
 } PK_AL(4);
+
+//#
+
+//# LCD Const Pointers
+
+extern u32* const OAM;
+
+extern struct dispcnt* const DISCNT;
+
+extern Color* const BG_PALETTE;
+
+extern u32* const BG_BMP_FRAME0;
+extern u32* const BG_BMP_FRAME1;
+
+extern const u32 BG_BMP_FRAME_SIZE;
+
+//extern struct dispcnt* const DISPCNT;
 
 //#

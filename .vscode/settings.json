@@ -4,8 +4,15 @@
         "typeinfo": "c",
         "gba_video.h": "c",
         "gba_systemcalls.h": "c",
-        "arrow_img_bin.h": "c"
+        "arrow_img_bin.h": "c",
+        "color.h": "c"
     },
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/bower_components": true,
+        "**/*.code-search": true
+    },
+    
     "folding": {
         "*": {
             "begin": "//#",

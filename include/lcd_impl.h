@@ -1,5 +1,6 @@
 #pragma once
 
+#include "types.h"
 #include "lcd_types.h"
 
 void CalcRotationMatrix(volatile struct oam_affine_param* ptr, fixed32 angle, fixed32 scale);
