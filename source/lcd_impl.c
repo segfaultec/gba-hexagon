@@ -3,7 +3,7 @@
 #include "trig.h"
 #include <gba_systemcalls.h>
 
-void CalcRotationMatrix(volatile struct oam_affine_param* ptr, fixed32 angle, fixed32 scale) {
+void CalcOAMRotationMatrix(volatile struct oam_affine_param* ptr, fixed32 angle, fixed32 scale) {
 	// [ pa  pb ]
 	// [ pc  pd ]
 
@@ -14,6 +14,27 @@ void CalcRotationMatrix(volatile struct oam_affine_param* ptr, fixed32 angle, fi
 	ptr->pb = fx_division(-calc_sin, scale);
 	ptr->pc = fx_division(calc_sin, scale);
 	ptr->pd = fx_division(calc_cos, scale);
+}
+
+void CalcBGRotationMatrix(volatile struct bg_affine_param* ptr, fixed32 dx, fixed32 dy, fixed32 angle, fixed32 scale) {
+	fixed32 calc_sin = my_sine(angle);
+	fixed32 calc_cos = my_cosine(angle);
+
+	fixed32 pa = fx_division(calc_cos, scale);
+	fixed32 pb = fx_division(-calc_sin, scale);
+	fixed32 pc = fx_division(calc_sin, scale);
+	fixed32 pd = fx_division(calc_cos, scale);
+
+	fixed32 scr_x = fx_from_int(120);
+	fixed32 scr_y = fx_from_int(80);
+
+	BGAFFINE2->dx = dx - (fx_multiply(scr_x, pa) + fx_multiply(scr_y, pb));
+	BGAFFINE2->dy = dy - (fx_multiply(scr_x, pc) + fx_multiply(scr_y, pd));
+
+	ptr->pa = pa;
+	ptr->pb = pb;
+	ptr->pc = pc;
+	ptr->pd = pd;
 }
 
 void Copy8x8TileArea(void* source, void* dest, u32 width, u32 height) {

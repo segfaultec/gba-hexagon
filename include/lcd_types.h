@@ -32,7 +32,7 @@ struct bgcnt {
     /* 6   */ bool mosaic : 1;
     /* 7   */ bool palette_256 : 1;
     /* 8-12*/ unsigned int screen_base_2k_block : 5;
-    /* 13  */ char __reserved2 : 1;
+    /* 13  */ bool affine_display_wrap : 1;
     /*14-15*/ unsigned int screen_size : 2;
 } PK_AL(2);
 
@@ -124,7 +124,14 @@ static const struct oam_affine oam_affine_zero = {
 
 //#
 
-//# OAM Rotation/Scaling Params
+//# OAM/BG Rotation/Scaling Params
+
+struct bgscr {
+    unsigned int x: 9;
+    unsigned int __unused1 : 7;
+    unsigned int y: 9;
+    unsigned int __unused2 : 7;
+} PK_AL(2);
 
 struct oam_affine_param {
     u16 __filler1[3];
@@ -135,6 +142,15 @@ struct oam_affine_param {
     fixed16 pc;
     u16 __filler4[3];
     fixed16 pd;
+} PK_AL(4);
+
+struct bg_affine_param {
+    fixed16 pa;
+    fixed16 pb;
+    fixed16 pc;
+    fixed16 pd;
+    fixed32 dx;
+    fixed32 dy;
 } PK_AL(4);
 
 //#
@@ -161,6 +177,11 @@ static Color* const BG_PALETTE = (Color*)0x05000000;
 static u32* const BG_BMP_FRAME0 = (u32*)0x6000000;
 static u32* const BG_BMP_FRAME1 = (u32*)0x600A000;
 
-//extern struct dispcnt* const DISPCNT;
+static struct bgscr* const BGSCR0 = (struct bgscr*)0x4000010;
+static struct bgscr* const BGSCR1 = (struct bgscr*)0x4000014;
+static struct bgscr* const BGSCR2 = (struct bgscr*)0x4000018;
+static struct bgscr* const BGSCR3 = (struct bgscr*)0x400001C;
+
+static volatile struct bg_affine_param* BGAFFINE2 = (volatile struct bg_affine_param*)0x4000020;
 
 //#

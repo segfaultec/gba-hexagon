@@ -17,6 +17,8 @@ int main(void) {
 
 	game_init();
 
+	VBlankIntrWait();
+
 	while (1) {
 		game_update();
 

@@ -3,7 +3,9 @@
 #include "types.h"
 #include "lcd_types.h"
 
-void CalcRotationMatrix(volatile struct oam_affine_param* ptr, fixed32 angle, fixed32 scale);
+void CalcOAMRotationMatrix(volatile struct oam_affine_param* ptr, fixed32 angle, fixed32 scale);
+
+void CalcBGRotationMatrix(volatile struct bg_affine_param* ptr, fixed32 dx, fixed32 dy, fixed32 angle, fixed32 scale);
 
 void Copy8x8TileArea(void* source, void* dest, u32 width, u32 height);
 
