@@ -14,23 +14,20 @@ struct KeyState {
 	bool Down : 1;
 	bool R : 1;
 	bool L : 1;
+	unsigned int __unused : 6;
 } PK_AL(2);
 
 // 0 - DOWN
 // 1 - UP
 
-const static struct KeyState* __key_state = (struct KeyState*)0x4000130;
+extern struct KeyState* const __current_key_state __attribute((unused));
 
-static struct KeyState __last_key_state_value __attribute__((unused));
+extern struct KeyState* const __last_key_state __attribute__((unused));
 
-static struct KeyState* __last_key_state __attribute__((unused)) = &__last_key_state_value;
+void UpdateKeyDown();
 
-INLINE void UpdateKeyDown() {
-	*__last_key_state = *__key_state;
-}
+#define KEY_DOWN(key) (__current_key_state->key == 0 && __last_key_state->key == 1)
 
-#define KEY_DOWN(key) (__key_state->key == 0 && __last_key_state->key == 1)
+#define KEY_HELD(key) (__current_key_state->key == 0)
 
-#define KEY_HELD(key) (__key_state->key == 0)
-
-#define KEY_UP(key) (__key_state->key == 1 && __last_key_state->key == 0)
+#define KEY_UP(key) (__current_key_state->key == 1 && __last_key_state->key == 0)

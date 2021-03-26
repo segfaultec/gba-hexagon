@@ -17,12 +17,11 @@ int main(void) {
 
 	game_init();
 
-	VBlankIntrWait();
-
 	while (1) {
+		UpdateKeyDown();
+
 		game_update();
 
-		UpdateKeyDown();
 		VBlankIntrWait();
 	}
 }
