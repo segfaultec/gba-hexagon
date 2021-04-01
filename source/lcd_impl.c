@@ -16,25 +16,25 @@ void CalcOAMRotationMatrix(volatile struct oam_affine_param* ptr, fixed32 angle,
 	ptr->pd = fx_division(calc_cos, scale);
 }
 
-void CalcBGRotationMatrix(volatile struct bg_affine_param* ptr, fixed32 dx, fixed32 dy, fixed32 angle, fixed32 scale) {
-	fixed32 calc_sin = my_sine(angle);
-	fixed32 calc_cos = my_cosine(angle);
+void CalcBGRotationMatrix(struct calc_bg_rot_param param) {
+	fixed32 calc_sin = my_sine(param.angle);
+	fixed32 calc_cos = my_cosine(param.angle);
 
-	fixed32 pa = fx_division(calc_cos, scale);
-	fixed32 pb = fx_division(-calc_sin, scale);
-	fixed32 pc = fx_division(calc_sin, scale);
-	fixed32 pd = fx_division(calc_cos, scale);
+	fixed32 pa = fx_division(calc_cos, param.scale);
+	fixed32 pb = fx_division(-calc_sin, param.scale);
+	fixed32 pc = fx_division(calc_sin, param.scale);
+	fixed32 pd = fx_division(calc_cos, param.scale);
+	// 120 80
+	fixed32 scr_x = param.scr_x;
+	fixed32 scr_y = param.scr_y;
 
-	fixed32 scr_x = fx_from_int(120);
-	fixed32 scr_y = fx_from_int(80);
+	BGAFFINE2->dx = param.dx - (fx_multiply(scr_x, pa) + fx_multiply(scr_y, pb));
+	BGAFFINE2->dy = param.dy - (fx_multiply(scr_x, pc) + fx_multiply(scr_y, pd));
 
-	BGAFFINE2->dx = dx - (fx_multiply(scr_x, pa) + fx_multiply(scr_y, pb));
-	BGAFFINE2->dy = dy - (fx_multiply(scr_x, pc) + fx_multiply(scr_y, pd));
-
-	ptr->pa = pa;
-	ptr->pb = pb;
-	ptr->pc = pc;
-	ptr->pd = pd;
+	param.ptr->pa = pa;
+	param.ptr->pb = pb;
+	param.ptr->pc = pc;
+	param.ptr->pd = pd;
 }
 
 void Copy8x8TileArea(void* source, void* dest, u32 width, u32 height) {

@@ -5,7 +5,14 @@
 
 void CalcOAMRotationMatrix(volatile struct oam_affine_param* ptr, fixed32 angle, fixed32 scale);
 
-void CalcBGRotationMatrix(volatile struct bg_affine_param* ptr, fixed32 dx, fixed32 dy, fixed32 angle, fixed32 scale);
+struct calc_bg_rot_param {
+	volatile struct bg_affine_param* ptr;
+	fixed32 dx; fixed32 dy;
+	fixed32 scr_x; fixed32 scr_y;
+	fixed32 angle; fixed32 scale;
+};
+
+void CalcBGRotationMatrix(struct calc_bg_rot_param param);
 
 void Copy8x8TileArea(void* source, void* dest, u32 width, u32 height);
 

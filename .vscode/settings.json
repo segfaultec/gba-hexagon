@@ -7,7 +7,15 @@
         "arrow_img_bin.h": "c",
         "color.h": "c",
         "gba_base.h": "c",
-        "hexagon_full_img_bin.h": "c"
+        "hexagon_full_img_bin.h": "c",
+        "numbers_img_bin.h": "c",
+        "gba_input.h": "c",
+        "input.h": "c",
+        "numdisplay.h": "c",
+        "types.h": "c",
+        "random": "c",
+        "gba_types.h": "c",
+        "lcd_impl.h": "c"
     },
     "search.exclude": {
         "**/node_modules": true,

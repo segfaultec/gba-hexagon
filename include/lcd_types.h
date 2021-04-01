@@ -172,7 +172,7 @@ INLINE struct bgmap* BG_MAP(u32 index) {
     return (struct bgmap*)(VRAM_BASE + (index << 11));
 }
 
-static Color* const BG_PALETTE = (Color*)0x05000000;
+static volatile Color* const BG_PALETTE = (volatile Color*)0x05000000;
 
 static u32* const BG_BMP_FRAME0 = (u32*)0x6000000;
 static u32* const BG_BMP_FRAME1 = (u32*)0x600A000;
@@ -184,4 +184,5 @@ static struct bgscr* const BGSCR3 = (struct bgscr*)0x400001C;
 
 static volatile struct bg_affine_param* BGAFFINE2 = (volatile struct bg_affine_param*)0x4000020;
 
+static volatile Color* const OAM_PALETTE = (volatile Color*)0x5000200;
 //#

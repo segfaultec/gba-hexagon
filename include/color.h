@@ -13,3 +13,6 @@ typedef struct Color {
 u8 Lerp8(u8 A, u8 B, u8 F);
 
 Color mixcolor(Color a, Color b, u8 mix);
+
+static const Color black = {0, 0, 0};
+static const Color white = {31, 31, 31};
