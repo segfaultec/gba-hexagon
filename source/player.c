@@ -55,7 +55,7 @@ void player_update(fixed32 angleoffset, u32 index) {
 		angle += tau;
 	}
 
-    numdisplay_update(0, angle);
-    numdisplay_update(1, angleoffset);
+    //numdisplay_update(0, angle);
+    //numdisplay_update(1, angleoffset);
     WriteToOAM(&player_sprite, index);
 }

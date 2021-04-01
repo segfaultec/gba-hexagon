@@ -40,7 +40,7 @@ static s32 split_number(u32 number, u8* indexes) {
 }
 
 static void display_indexes(u8* indexes, s32 mainoffset, s32 tileoffset) {
-    for (int i=0; i<8; i++) {
+    for (int i=tileoffset; i<8; i++) {
         struct bgmap tile = {
             .tile = 0,
             .palette = palette_index
@@ -52,7 +52,7 @@ static void display_indexes(u8* indexes, s32 mainoffset, s32 tileoffset) {
             .tile = indexes[i],
             .palette = palette_index
         };
-        map_pos[i + mainoffset + tileoffset] = tile;
+        map_pos[i + mainoffset - tileoffset] = tile;
     }
 }
 
@@ -60,5 +60,5 @@ void numdisplay_update(u32 index, u32 number) {
     u8 indexes[8] = {0,0,0,0,0,0,0,0};
     
     s32 count = split_number(number, indexes);
-    display_indexes(indexes, (32*index), -count);
+    display_indexes(indexes, (32*index), count);
 }
