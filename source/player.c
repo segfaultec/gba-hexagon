@@ -12,7 +12,7 @@
 
 static fixed32 angle = 0;
 
-const static fixed32 movespeed = 30;
+const static fixed32 movespeed = 40;
 
 static struct oam_regular player_sprite = {
     .shape = OBJ_SHAPE_SQUARE,

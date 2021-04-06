@@ -14,6 +14,7 @@
 
 #include "numdisplay.h"
 #include "player.h"
+#include "patterns.h"
 
 const u32 player_count = 32;
 fixed32 x; fixed32 y;
@@ -29,47 +30,48 @@ void game_init() {
 	BGCNT2->screen_base_2k_block = 31;
 	BGCNT2->screen_size = 1;
 
-	CpuFastSet(hexagon_reduced_img_bin, VRAM_BASE, COPY32 | (hexagon_reduced_img_bin_size / 4));
-
-	struct bgmap* map = (void*)0x600f800;
-
+	// Clear map
+	struct bgmap* map = (void*)(0x6000000 + (31<<11));
 	*(u32*)map = 0;
-	CpuFastSet(map, map, FILL | COPY32 | (0x800/4));
+	CpuFastSet(map, map, FILL | COPY32 | (0x800>>2));
 
-	CpuFastSet(hexagon_reduced_pal_bin, (void*)BG_PALETTE, COPY32 | (hexagon_reduced_pal_bin_size/4));
+	// Set BG pallete
+	const Color main_pal[] = {
+		{0, 0, 0}, // black (hex center)
+		{0, 0, 0}, // col 1
+		{0, 31, 31}, // col 2
+		{26, 26, 26}, // gray (hex inner)
+		{31, 31, 31} // white (hex outer/player)
+	};
+	for (int i=0; i<(sizeof(main_pal)/sizeof(Color)); i++) {
+		BG_PALETTE[i] = main_pal[i];
+	}
 
-	const Color black = {0, 0, 0};
-	const Color cyan  = {0, 31, 31};
-	BG_PALETTE[1] = black;
-	BG_PALETTE[2] = cyan;
-
-	CpuFastSet(hexagon_map_bin, map, COPY32 | (hexagon_map_bin_size/4));
-
+	// Clear OAM
 	const struct oam_regular empty_sprite = {
 		.disabled = true
 	};
-
 	WriteToOAM(&empty_sprite, 0);
 	CpuFastSet(OAM, OAM, FILL | COPY32 | 256);
 
-	//x = 34830;
-	//y = 33900;
 	x = 32840;
 	y = 33800;
 
-	numdisplay_init(1, 5, 1);
+	patterns_init();
+
+	numdisplay_init(1, 30, 1);
 
 	player_data_init();
-	// for (int i=0; i<player_count; i++)
-	// 	player_init(0);
 	player_init(0);
 }
 
 static fixed32 angle = 0;
 
 void game_update() { 
-	numdisplay_update(0, x);
-	numdisplay_update(1, y);
+	struct bgmap* map = (void*)(0x6000000 + (31<<11));
+	CpuFastSet(hexagon_map_bin, map, COPY32 | (hexagon_map_bin_size>>2));
+
+	patterns_update();
 
 	struct calc_bg_rot_param bgparam ={
 		.ptr = BGAFFINE2,
@@ -83,20 +85,9 @@ void game_update() {
 
 	CalcBGRotationMatrix(bgparam);
 
-	// for (int i=0; i<player_count; i++) {
-	// 	fixed32 fraction = fx_division(fx_from_int(i), fx_from_int(player_count));
-	// 	fixed32 offset = fx_multiply(tau, fraction);
-	// 	player_update(angle + offset, i);
-	// }
 	player_update(angle, 0);
 
-	//if (KEY_HELD(A)) angle += 10;
-	angle += 10;
-
-	//if (KEY_DOWN(Left)) x -= 8;
-	//if (KEY_DOWN(Right)) x += 8;
-	//if (KEY_DOWN(Up)) y -= 8;
-	//if (KEY_DOWN(Down)) y += 8;
+	//angle += 10;
 
 	if (KEY_DOWN(Select)) angle = 0;
 	
