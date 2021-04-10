@@ -3,7 +3,8 @@
 
 #include "hexagon_map_bin.h"
 #include "hexagon_reduced_img_bin.h"
-#include "pedge_test_img_bin.h"
+#include "pedge_mid_img_bin.h"
+#include "pedge_diag_br_img_bin.h"
 
 #include "lcd_impl.h"
 #include "input.h"
@@ -13,10 +14,11 @@
 
 static u8* map = (void*)(0x6000000 + (31<<11));
 
-static const u32 pedge_position = 25;
+static const u32 pedge_mid_pos = 25;
+static const u32 pedge_diag_br_pos = 31;
 
 INLINE void* TileToPtr(u32 tile) {
-    return VRAM_BASE + (pedge_position << 4);
+    return VRAM_BASE + (tile << 4);
 }
 
 void patterns_init() {
@@ -52,8 +54,13 @@ INLINE void CalcDiag(struct diagcalc* data, const int dirX, const int dirY) {
     }
 }
 
-static unsigned int x = 16;
-static unsigned int y = 18;
+
+const int index_min = 0;
+const int index_max = 10;
+const int subindex_min = 0;
+const int subindex_max = 15;
+
+static int index = 2;
 static int subindex = 0;
 
 void patterns_update() {
@@ -61,45 +68,142 @@ void patterns_update() {
     if (KEY_DOWN(Up)) subindex--;
     if (KEY_DOWN(Down)) subindex++;
 
-    if (subindex < 0) {
-        subindex = 7;
-        y--;
+    if (subindex < subindex_min) {
+        subindex = subindex_max;
+        index--;
+    } else if (subindex > subindex_max) {
+        subindex = subindex_min;
+        index++;
     }
-    if (subindex > 7) {
-        subindex = 0;
-        y++;
-    }
-    if (y < 18) y = 25;
-    if (y > 25) y = 18;
+    if (index < index_min) index = index_max;
+    else if (index > index_max) index = index_min;
 
-    numdisplay_update(0, y);
+    numdisplay_update(0, index);
     numdisplay_update(1, subindex);
 
-    // Load current tiles
+    int diag_subindex = subindex; // Diagonal is 16 frames
+    int mid_subindex = subindex % 4; // Mid is 4 frames
 
+    // Load current tiles
     CpuFastSet(
-        pedge_test_img_bin + (subindex * 384),
-        TileToPtr(pedge_position),
-        COPY32 | 96 /*6 8bpp tiles*/
+        pedge_mid_img_bin + (mid_subindex * 64 * 5),
+        TileToPtr(pedge_mid_pos),
+        COPY32 | 16 * 5
     );
 
-    //if (++index > 7) index = 0;
+    CpuFastSet(
+        pedge_diag_br_img_bin + (diag_subindex * 64 * 6),
+        TileToPtr(pedge_diag_br_pos),
+        COPY32 | 16 * 6
+    );
 
     // Initialise the WRAM map
+    // I can't mess about with VRAM directly too well, poking with unaligned data there straight up doesn't work.
+    // Instead I'm making a buffer in WRAM to mess about with, copying it whole into VRAM once I'm done.
     u8 current_map[1024];
     CpuFastSet(hexagon_map_bin, current_map, COPY32 | 256);
 
-    // Edit it
-    current_map[index_from_tile(x, y)] = pedge_position + 0;
-    current_map[index_from_tile(x+1, y)] = pedge_position + 1;
-    current_map[index_from_tile(x, y+1)] = pedge_position + 3;
-    current_map[index_from_tile(x+1, y+1)] = pedge_position + 4;
-    if (subindex == 7) {
-        current_map[index_from_tile(x, y+2)] = pedge_position + 2;
-        current_map[index_from_tile(x+1, y+2)] = pedge_position + 5;
+    struct diagcalc current = {
+        17, 17, 1
+    };
+
+    // Find the starting position
+    for (unsigned int i=0; i<index*3; i++) {
+        CalcDiag(&current, 1, 1);
     }
-    else if (subindex > 2) {
-        current_map[index_from_tile(x, y+2)] = pedge_position + 5;
+
+    // == BR BORDER ==
+    unsigned int diag_x = current.x;
+    unsigned int diag_y = current.y;
+
+    // Correct offsets
+    if (subindex <= 7) {
+        
+    } else if (subindex <= 9) {
+        diag_x+=1;
+    } else {
+        diag_x+=1;
+        diag_y+=1;
+    }
+
+    if (!KEY_HELD(A)) {
+        // Only needs to be loaded 8-16, and if it is loaded earlier it clips into the center hexagon
+        if (subindex >= 8) {
+            current_map[index_from_tile(diag_x-2, diag_y-1)] = pedge_diag_br_pos + 0;
+        }
+        current_map[index_from_tile(diag_x-1, diag_y-1)] = pedge_diag_br_pos + 1;
+        current_map[index_from_tile(diag_x, diag_y-1)] = pedge_diag_br_pos + 2;
+        current_map[index_from_tile(diag_x-2, diag_y)] = pedge_diag_br_pos + 3;
+        current_map[index_from_tile(diag_x-1, diag_y)] = pedge_diag_br_pos + 4;
+        current_map[index_from_tile(diag_x, diag_y)] = pedge_diag_br_pos + 5;
+    }
+
+    // == BR MID LINE == 
+    unsigned int mid_x = current.x - 1;
+    unsigned int mid_y = current.y + 1;
+
+    // Correct offsets
+    if (subindex <= 3) {
+        mid_x--;
+    } else if (subindex <= 7) {
+        
+    } else if (subindex <= 11) {
+        mid_x++;
+    } else {
+        mid_y++;
+    }
+
+    //numdisplay_update(2, mid_subindex);
+    //numdisplay_update(3, mid_x);
+
+    if (!KEY_HELD(B)) {
+        // Only render at these subindexes, otherwise it clips  into the border
+        if (subindex <= 3 || subindex >= 12) {
+            current_map[index_from_tile(mid_x-1, mid_y-1)] = pedge_mid_pos + 0;
+            current_map[index_from_tile(mid_x, mid_y-1)] = pedge_mid_pos + 1;
+
+            // At SI3, there is a dot missing near the right edge of the pattern line
+            // Anywhere other than SI3, this tile isn't needed or clips into the border.
+            if (mid_subindex == 3) {
+                current_map[index_from_tile(mid_x+1, mid_y)] = pedge_mid_pos + 4;
+            }
+        }
+
+        current_map[index_from_tile(mid_x-3, mid_y)] = pedge_mid_pos + 0;
+        current_map[index_from_tile(mid_x-2, mid_y)] = pedge_mid_pos + 1;
+        current_map[index_from_tile(mid_x-1, mid_y)] = pedge_mid_pos + 2;
+        current_map[index_from_tile(mid_x, mid_y)] = pedge_mid_pos + 3;
+    }
+
+    // == BR VERT CAP ==
+
+    while (current.x > 16) {
+        CalcDiag(&current, -1, 1);
+    }
+
+    unsigned int cap_x = current.x;
+    unsigned int cap_y = current.y;
+
+    if (subindex <= 3) {
+        current_map[index_from_tile(cap_x, cap_y-1)] = pedge_mid_pos + 0;
+        current_map[index_from_tile(cap_x, cap_y)] = pedge_mid_pos + 2;
+    } else if (subindex <= 7) {
+        current_map[index_from_tile(cap_x, cap_y)] = pedge_mid_pos + 1;
+        current_map[index_from_tile(cap_x, cap_y+1)] = pedge_mid_pos + 3;
+    } else if (subindex <= 11) {
+        current_map[index_from_tile(cap_x, cap_y)] = pedge_mid_pos + 0;
+        current_map[index_from_tile(cap_x, cap_y+1)] = pedge_mid_pos + 2;
+    } else {
+        current_map[index_from_tile(cap_x, cap_y+1)] = pedge_mid_pos + 1;
+        current_map[index_from_tile(cap_x, cap_y+2)] = pedge_mid_pos + 3;
+    }
+
+    // A missing dot similar to above
+    if (subindex == 3) {
+        current_map[index_from_tile(cap_x, cap_y+1)] = pedge_mid_pos + 4;
+    }
+    if (subindex == 11) {
+        current_map[index_from_tile(cap_x, cap_y+2)] = pedge_mid_pos + 4;
     }
 
     // Copy the WRAM map into VRAM
