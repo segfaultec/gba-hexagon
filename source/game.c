@@ -78,8 +78,13 @@ void game_update() {
 		.dx = x,
 		.dy = y,
 		.angle = angle,
-		.scale = fx_from_float(1.2),
-		.scr_x = fx_from_float(120),
+
+		// as close as the camera can get
+		// before showing the edge of the tilemap
+		//.scale = fx_from_float(1.15),
+		.scale = fx_from_float(1.0),
+
+		.scr_x = fx_from_float(120),  
 		.scr_y = fx_from_float(80),
 	};
 

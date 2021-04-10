@@ -40,12 +40,9 @@ static s32 split_number(u32 number, u8* indexes) {
 }
 
 static void display_indexes(u8* indexes, s32 mainoffset, s32 tileoffset) {
-    for (int i=tileoffset; i<8; i++) {
-        struct bgmap tile = {
-            .tile = 0,
-            .palette = palette_index
-        };
-        map_pos[i + mainoffset] = tile;
+    // A forced clear, could be smarter
+    for (int i=0; i<8; i++) {
+        map_pos[i + mainoffset].tile = 0;
     }
     for (int i=0; i<8; i++) {
         struct bgmap tile = {
