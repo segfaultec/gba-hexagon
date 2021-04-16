@@ -139,41 +139,7 @@ void patterns_update() {
     }
 
     // == BR MID LINE == 
-    unsigned int mid_x = current.x - 1;
-    unsigned int mid_y = current.y + 1;
 
-    // Correct offsets
-    if (subindex <= 3) {
-        mid_x--;
-    } else if (subindex <= 7) {
-        
-    } else if (subindex <= 11) {
-        mid_x++;
-    } else {
-        mid_y++;
-    }
-
-    //numdisplay_update(2, mid_subindex);
-    //numdisplay_update(3, mid_x);
-
-    if (!KEY_HELD(B)) {
-        // Only render at these subindexes, otherwise it clips  into the border
-        if (subindex <= 3 || subindex >= 12) {
-            current_map[index_from_tile(mid_x-1, mid_y-1)] = pedge_mid_pos + 0;
-            current_map[index_from_tile(mid_x, mid_y-1)] = pedge_mid_pos + 1;
-
-            // At SI3, there is a dot missing near the right edge of the pattern line
-            // Anywhere other than SI3, this tile isn't needed or clips into the border.
-            if (mid_subindex == 3) {
-                current_map[index_from_tile(mid_x+1, mid_y)] = pedge_mid_pos + 4;
-            }
-        }
-
-        current_map[index_from_tile(mid_x-3, mid_y)] = pedge_mid_pos + 0;
-        current_map[index_from_tile(mid_x-2, mid_y)] = pedge_mid_pos + 1;
-        current_map[index_from_tile(mid_x-1, mid_y)] = pedge_mid_pos + 2;
-        current_map[index_from_tile(mid_x, mid_y)] = pedge_mid_pos + 3;
-    }
 
     // == BR VERT CAP ==
 

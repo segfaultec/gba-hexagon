@@ -68,9 +68,6 @@ void game_init() {
 static fixed32 angle = 0;
 
 void game_update() { 
-	struct bgmap* map = (void*)(0x6000000 + (31<<11));
-	CpuFastSet(hexagon_map_bin, map, COPY32 | (hexagon_map_bin_size>>2));
-
 	patterns_update();
 
 	struct calc_bg_rot_param bgparam ={
