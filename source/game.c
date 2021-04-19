@@ -41,7 +41,8 @@ void game_init() {
 		{0, 0, 0}, // col 1
 		{0, 31, 31}, // col 2
 		{26, 26, 26}, // gray (hex inner)
-		{31, 31, 31} // white (hex outer/player)
+		{31, 31, 31}, // white (hex outer/player/pattern)
+		{31, 31, 31} // alt white (pattern alt)
 	};
 	for (int i=0; i<(sizeof(main_pal)/sizeof(Color)); i++) {
 		BG_PALETTE[i] = main_pal[i];
@@ -78,8 +79,8 @@ void game_update() {
 
 		// as close as the camera can get
 		// before showing the edge of the tilemap
-		.scale = fx_from_float(1.15),
-		//.scale = fx_from_float(1.0),
+		//.scale = fx_from_float(1.15),
+		.scale = fx_from_float(1.0),
 
 		.scr_x = fx_from_float(120),  
 		.scr_y = fx_from_float(80),
@@ -89,7 +90,7 @@ void game_update() {
 
 	player_update(angle, 0);
 
-	angle += 5;
+	//angle += 5;
 
 	if (KEY_DOWN(Select)) angle = 0;
 	

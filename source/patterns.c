@@ -3,8 +3,12 @@
 
 #include "hexagon_map_bin.h"
 #include "hexagon_reduced_img_bin.h"
+
 #include "pedge_mid_img_bin.h"
+#include "pedge_vert_img_bin.h"
+
 #include "pedge_diag_br_img_bin.h"
+#include "pedge_diag_br_multi_img_bin.h"
 
 #include "lcd_impl.h"
 #include "input.h"
@@ -12,10 +16,8 @@
 
 #include <gba_systemcalls.h>
 
+//#
 static u8* map = (void*)(0x6000000 + (31<<11));
-
-static const u32 pedge_mid_pos = 25;
-static const u32 pedge_diag_br_pos = 31;
 
 INLINE void* TileToPtr(u32 tile) {
     return VRAM_BASE + (tile << 4);
@@ -61,7 +63,11 @@ INLINE void CalcDiag(struct diagcalc* data, const int dirX, const int dirY) {
         data->y += dirY;
     }
 }
+//#
 
+static const u32 pedge_mid_pos = 25; // size 5
+static const u32 pedge_diag_br_pos = 30; // size 6
+static const u32 pedge_vert_pos = 36; // size 2
 
 const int debug_tile = 3;
 
@@ -70,14 +76,14 @@ const int index_max = 8;
 const int subindex_min = 0;
 const int subindex_max = 15;
 
-static int index = 7;
-static int subindex = 6;
+static int index = 3;
+static int subindex = 0;
 
 void patterns_update() {
 
-    //if (KEY_DOWN(Up)) subindex--;
-    //if (KEY_DOWN(Down)) subindex++;
-    subindex++;
+    if (KEY_DOWN(Up)) subindex--;
+    if (KEY_DOWN(Down)) subindex++;
+    //subindex++;
 
     if (subindex < subindex_min) {
         subindex = subindex_max;
@@ -93,19 +99,36 @@ void patterns_update() {
     numdisplay_update(1, subindex);
 
     int diag_subindex = subindex; // Diagonal is 16 frames
-    int mid_subindex = subindex % 4; // Mid is 4 frames
+    int mid_subindex = subindex & 3; // Mid is 4 frames
+    int vert_subindex = subindex & 7; // Vert is 8 frames
 
     // Load current tiles
-    CpuFastSet(
+    CpuFastSet( // Mid
         pedge_mid_img_bin + (mid_subindex * 64 * 5),
         TileToPtr(pedge_mid_pos),
         COPY32 | 16 * 5
     );
 
-    CpuFastSet(
-        pedge_diag_br_img_bin + (diag_subindex * 64 * 6),
-        TileToPtr(pedge_diag_br_pos),
-        COPY32 | 16 * 6
+    if (1) {
+        CpuFastSet( // Diag
+            pedge_diag_br_multi_img_bin + (diag_subindex * 64 * 6),
+            TileToPtr(pedge_diag_br_pos),
+            COPY32 | 16 * 6
+        );
+    } else {
+        CpuFastSet( // Diag
+            pedge_diag_br_img_bin + (diag_subindex * 64 * 6),
+            TileToPtr(pedge_diag_br_pos),
+            COPY32 | 16 * 6
+        );
+    }
+
+    
+
+    CpuFastSet( // Vert
+        pedge_vert_img_bin + (vert_subindex * 64 * 2),
+        TileToPtr(pedge_vert_pos),
+        COPY32 | 16 * 2
     );
 
     // Initialise the WRAM map
@@ -138,7 +161,7 @@ void patterns_update() {
     }
 
     if (!KEY_HELD(A)) {
-        // Only needs to be loaded 8-16, and if it is loaded earlier it clips into the center hexagon
+        // Tile 0 only needs to be loaded 8-16, and if it is loaded earlier it clips into the center hexagon
         if (subindex >= 8) {
             write_to_tile(current_map, diag_x-2, diag_y-1, pedge_diag_br_pos + 0);
         }
@@ -147,6 +170,29 @@ void patterns_update() {
         write_to_tile(current_map, diag_x-2, diag_y, pedge_diag_br_pos + 3);
         write_to_tile(current_map, diag_x-1, diag_y, pedge_diag_br_pos + 4);
         write_to_tile(current_map, diag_x, diag_y, pedge_diag_br_pos + 5);
+    }
+
+    // == R VERT LINE == 
+    int vert_start_x = current.x;
+    int vert_start_y = current.y;
+    if (subindex <= 5) {
+        vert_start_x -= 1;
+        vert_start_y -= 2;
+    } else if (subindex <= 13) {
+        vert_start_y -= 1;
+    } else {
+        vert_start_x += 1;
+        vert_start_y -= 1;
+    }
+
+    if (!KEY_HELD(B)) {
+        // One line
+        write_to_tile(current_map, vert_start_x, vert_start_y, pedge_vert_pos + 0);
+        write_to_tile(current_map, vert_start_x+1, vert_start_y, pedge_vert_pos + 1);
+
+        // Another line
+        write_to_tile(current_map, vert_start_x, vert_start_y-1, pedge_vert_pos + 0);
+        write_to_tile(current_map, vert_start_x+1, vert_start_y-1, pedge_vert_pos + 1);
     }
 
     // == BR MID LINE == 
@@ -178,28 +224,23 @@ void patterns_update() {
         tile_index = 1;
     }
 
-    if (!KEY_HELD(B)) {
-        // Do the first row
-        for (int dx = 0; dx <= tile_index; dx++) {
-            if (mid_start_x - tile_index + dx >= 16)
-                write_to_tile(current_map, mid_start_x - tile_index + dx, mid_start_y, pedge_mid_pos + dx);
-        }
-
-        while (mid_start_x >= 16) {
-            mid_start_x -= 2;
-            mid_start_y += 1;
-
-            for (int dx = 0; dx <= 4; dx++) {
-                if (mid_start_x - tile_index + dx >= 16)
-                    write_to_tile(current_map, mid_start_x - tile_index + dx, mid_start_y, pedge_mid_pos + dx);
-            }   
-        }
-        
-
-    } else {
-        write_to_tile(current_map, mid_start_x, mid_start_y, pedge_mid_pos + tile_index);
+    // Do the first row
+    for (int dx = 0; dx <= tile_index; dx++) {
+        if (mid_start_x - tile_index + dx >= 16)
+            write_to_tile(current_map, mid_start_x - tile_index + dx, mid_start_y, pedge_mid_pos + dx);
     }
 
+    while (mid_start_x >= 16) {
+        mid_start_x -= 2;
+        mid_start_y += 1;
+
+        for (int dx = 0; dx <= 4; dx++) {
+            if (mid_start_x - tile_index + dx >= 16)
+                write_to_tile(current_map, mid_start_x - tile_index + dx, mid_start_y, pedge_mid_pos + dx);
+        }   
+    }
+
+    // == FINISH == 
     // Copy the WRAM map into VRAM
     CpuFastSet(current_map, map, COPY32 | 256);
 }
