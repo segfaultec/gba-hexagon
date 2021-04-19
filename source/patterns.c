@@ -30,7 +30,15 @@ INLINE void* addr_from_tile(u8 x, u8 y) {
 }
 
 INLINE u32 index_from_tile(u8 x, u8 y) {
-    return (y*32) + x;
+    u32 toreturn = (((y*32) + x));
+    return toreturn;
+}
+
+INLINE void write_to_tile(u8* map, u8 x, u8 y, u8 value) {
+    u32 index = index_from_tile(x, y);
+    if (index < 1024) {
+        map[index] = value;
+    }
 }
 
 struct diagcalc {
@@ -55,18 +63,21 @@ INLINE void CalcDiag(struct diagcalc* data, const int dirX, const int dirY) {
 }
 
 
+const int debug_tile = 3;
+
 const int index_min = 0;
-const int index_max = 10;
+const int index_max = 8;
 const int subindex_min = 0;
 const int subindex_max = 15;
 
-static int index = 2;
-static int subindex = 0;
+static int index = 7;
+static int subindex = 6;
 
 void patterns_update() {
 
-    if (KEY_DOWN(Up)) subindex--;
-    if (KEY_DOWN(Down)) subindex++;
+    //if (KEY_DOWN(Up)) subindex--;
+    //if (KEY_DOWN(Down)) subindex++;
+    subindex++;
 
     if (subindex < subindex_min) {
         subindex = subindex_max;
@@ -129,47 +140,64 @@ void patterns_update() {
     if (!KEY_HELD(A)) {
         // Only needs to be loaded 8-16, and if it is loaded earlier it clips into the center hexagon
         if (subindex >= 8) {
-            current_map[index_from_tile(diag_x-2, diag_y-1)] = pedge_diag_br_pos + 0;
+            write_to_tile(current_map, diag_x-2, diag_y-1, pedge_diag_br_pos + 0);
         }
-        current_map[index_from_tile(diag_x-1, diag_y-1)] = pedge_diag_br_pos + 1;
-        current_map[index_from_tile(diag_x, diag_y-1)] = pedge_diag_br_pos + 2;
-        current_map[index_from_tile(diag_x-2, diag_y)] = pedge_diag_br_pos + 3;
-        current_map[index_from_tile(diag_x-1, diag_y)] = pedge_diag_br_pos + 4;
-        current_map[index_from_tile(diag_x, diag_y)] = pedge_diag_br_pos + 5;
+        write_to_tile(current_map, diag_x-1, diag_y-1, pedge_diag_br_pos + 1);
+        write_to_tile(current_map, diag_x, diag_y-1, pedge_diag_br_pos + 2);
+        write_to_tile(current_map, diag_x-2, diag_y, pedge_diag_br_pos + 3);
+        write_to_tile(current_map, diag_x-1, diag_y, pedge_diag_br_pos + 4);
+        write_to_tile(current_map, diag_x, diag_y, pedge_diag_br_pos + 5);
     }
 
     // == BR MID LINE == 
+    int mid_start_x = current.x;
+    int mid_start_y = current.y;
+    int tile_index;
 
-
-    // == BR VERT CAP ==
-
-    while (current.x > 16) {
-        CalcDiag(&current, -1, 1);
-    }
-
-    unsigned int cap_x = current.x;
-    unsigned int cap_y = current.y;
-
+    // Adjust starting position and tile
+    // to fit the diagonal section
     if (subindex <= 3) {
-        current_map[index_from_tile(cap_x, cap_y-1)] = pedge_mid_pos + 0;
-        current_map[index_from_tile(cap_x, cap_y)] = pedge_mid_pos + 2;
+        mid_start_x -= 2;
+        mid_start_y += 0;
+        tile_index = 1;
     } else if (subindex <= 7) {
-        current_map[index_from_tile(cap_x, cap_y)] = pedge_mid_pos + 1;
-        current_map[index_from_tile(cap_x, cap_y+1)] = pedge_mid_pos + 3;
+        mid_start_x -= 0;
+        mid_start_y += 1;
+        tile_index = 4;
+    } else if (subindex <= 9) {
+        mid_start_x -= 0;
+        mid_start_y += 1;
+        tile_index = 3;
     } else if (subindex <= 11) {
-        current_map[index_from_tile(cap_x, cap_y)] = pedge_mid_pos + 0;
-        current_map[index_from_tile(cap_x, cap_y+1)] = pedge_mid_pos + 2;
+        mid_start_x -= 1;
+        mid_start_y += 1;
+        tile_index = 2;
     } else {
-        current_map[index_from_tile(cap_x, cap_y+1)] = pedge_mid_pos + 1;
-        current_map[index_from_tile(cap_x, cap_y+2)] = pedge_mid_pos + 3;
+        mid_start_x -= 1;
+        mid_start_y += 1;
+        tile_index = 1;
     }
 
-    // A missing dot similar to above
-    if (subindex == 3) {
-        current_map[index_from_tile(cap_x, cap_y+1)] = pedge_mid_pos + 4;
-    }
-    if (subindex == 11) {
-        current_map[index_from_tile(cap_x, cap_y+2)] = pedge_mid_pos + 4;
+    if (!KEY_HELD(B)) {
+        // Do the first row
+        for (int dx = 0; dx <= tile_index; dx++) {
+            if (mid_start_x - tile_index + dx >= 16)
+                write_to_tile(current_map, mid_start_x - tile_index + dx, mid_start_y, pedge_mid_pos + dx);
+        }
+
+        while (mid_start_x >= 16) {
+            mid_start_x -= 2;
+            mid_start_y += 1;
+
+            for (int dx = 0; dx <= 4; dx++) {
+                if (mid_start_x - tile_index + dx >= 16)
+                    write_to_tile(current_map, mid_start_x - tile_index + dx, mid_start_y, pedge_mid_pos + dx);
+            }   
+        }
+        
+
+    } else {
+        write_to_tile(current_map, mid_start_x, mid_start_y, pedge_mid_pos + tile_index);
     }
 
     // Copy the WRAM map into VRAM

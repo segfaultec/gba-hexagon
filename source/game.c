@@ -78,8 +78,8 @@ void game_update() {
 
 		// as close as the camera can get
 		// before showing the edge of the tilemap
-		//.scale = fx_from_float(1.15),
-		.scale = fx_from_float(1.0),
+		.scale = fx_from_float(1.15),
+		//.scale = fx_from_float(1.0),
 
 		.scr_x = fx_from_float(120),  
 		.scr_y = fx_from_float(80),
@@ -89,7 +89,7 @@ void game_update() {
 
 	player_update(angle, 0);
 
-	//angle += 10;
+	angle += 5;
 
 	if (KEY_DOWN(Select)) angle = 0;
 	
