@@ -8,7 +8,6 @@
 #include "pedge_vert_img_bin.h"
 
 #include "pedge_diag_br_img_bin.h"
-#include "pedge_diag_br_multi_img_bin.h"
 
 #include "lcd_impl.h"
 #include "input.h"
@@ -66,8 +65,8 @@ INLINE void CalcDiag(struct diagcalc* data, const int dirX, const int dirY) {
 //#
 
 static const u32 pedge_mid_pos = 25; // size 5
-static const u32 pedge_diag_br_pos = 30; // size 6
-static const u32 pedge_vert_pos = 36; // size 2
+static const u32 pedge_diag_br_pos = 30; // size 6 * 3 = 18
+static const u32 pedge_vert_pos = 48; // size 2
 
 const int debug_tile = 3;
 
@@ -109,21 +108,11 @@ void patterns_update() {
         COPY32 | 16 * 5
     );
 
-    if (1) {
-        CpuFastSet( // Diag
-            pedge_diag_br_multi_img_bin + (diag_subindex * 64 * 6),
-            TileToPtr(pedge_diag_br_pos),
-            COPY32 | 16 * 6
-        );
-    } else {
-        CpuFastSet( // Diag
-            pedge_diag_br_img_bin + (diag_subindex * 64 * 6),
-            TileToPtr(pedge_diag_br_pos),
-            COPY32 | 16 * 6
-        );
-    }
-
-    
+    CpuFastSet( // Diag
+        pedge_diag_br_img_bin + (diag_subindex * 64 * 18),
+        TileToPtr(pedge_diag_br_pos),
+        COPY32 | 16 * 18
+    );
 
     CpuFastSet( // Vert
         pedge_vert_img_bin + (vert_subindex * 64 * 2),
@@ -150,6 +139,8 @@ void patterns_update() {
     unsigned int diag_x = current.x;
     unsigned int diag_y = current.y;
 
+    unsigned int diag_offset = 12; // Both L and R
+
     // Correct offsets
     if (subindex <= 7) {
         
@@ -163,13 +154,13 @@ void patterns_update() {
     if (!KEY_HELD(A)) {
         // Tile 0 only needs to be loaded 8-16, and if it is loaded earlier it clips into the center hexagon
         if (subindex >= 8) {
-            write_to_tile(current_map, diag_x-2, diag_y-1, pedge_diag_br_pos + 0);
+            write_to_tile(current_map, diag_x-2, diag_y-1, pedge_diag_br_pos + diag_offset + 0);
         }
-        write_to_tile(current_map, diag_x-1, diag_y-1, pedge_diag_br_pos + 1);
-        write_to_tile(current_map, diag_x, diag_y-1, pedge_diag_br_pos + 2);
-        write_to_tile(current_map, diag_x-2, diag_y, pedge_diag_br_pos + 3);
-        write_to_tile(current_map, diag_x-1, diag_y, pedge_diag_br_pos + 4);
-        write_to_tile(current_map, diag_x, diag_y, pedge_diag_br_pos + 5);
+        write_to_tile(current_map, diag_x-1, diag_y-1, pedge_diag_br_pos + diag_offset + 1);
+        write_to_tile(current_map, diag_x, diag_y-1, pedge_diag_br_pos + diag_offset + 2);
+        write_to_tile(current_map, diag_x-2, diag_y, pedge_diag_br_pos + diag_offset + 3);
+        write_to_tile(current_map, diag_x-1, diag_y, pedge_diag_br_pos + diag_offset + 4);
+        write_to_tile(current_map, diag_x, diag_y, pedge_diag_br_pos + diag_offset + 5);
     }
 
     // == R VERT LINE == 
