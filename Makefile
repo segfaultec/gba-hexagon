@@ -34,7 +34,7 @@ ARCH	:=	-mthumb -mthumb-interwork
 # 			$(ARCH)
 
 SHARED_CFLAGS := -Wall -Werror  -mcpu=arm7tdmi -mtune=arm7tdmi $(ARCH) 
-SHARED_CFLAGS += -Wno-error=unused-variable -Wno-error=unused-const-variable
+SHARED_CFLAGS += -Wno-unused-variable -Wno-error=unused-const-variable -Wno-error=unused-function
 
 
 ifeq ($(DEBUG),1)

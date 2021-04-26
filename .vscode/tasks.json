@@ -4,6 +4,19 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "runner",
+            "dependsOn": [
+                "make release",
+                "run"
+            ],
+            "dependsOrder": "sequence",
+            "type": "shell",
+            "windows": {
+                "command": "echo done"
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "stop emulation",
             "type": "shell",
             "windows": {
@@ -18,10 +31,7 @@
             "args": [
                 "DEBUG=1", //"-B"
             ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
+            "group": "build",
             "problemMatcher": ["$gcc"]
         },
         {
@@ -29,8 +39,12 @@
             "type": "process",
             "command": "make",
             "args": [
-                "DEBUG=0", "-B"
+                "DEBUG=0",
             ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
             "problemMatcher": ["$gcc"]
         },
         {
@@ -43,7 +57,8 @@
             "label": "gdb-debug",
             "type": "shell",
             "dependsOn": [
-                "make debug"
+                //"make debug"
+                "make release"
             ],
             "isBackground": false,
             "windows": {

@@ -20,6 +20,8 @@ void CalcBGRotationMatrix(struct calc_bg_rot_param param) {
 	fixed32 calc_sin = my_sine(param.angle);
 	fixed32 calc_cos = my_cosine(param.angle);
 
+	// This can be optimised, the scale can be baked into a seperate sin table to avoid the division
+	// Or, there can be a LUT for the whole matrix
 	fixed32 pa = fx_division(calc_cos, param.scale);
 	fixed32 pb = fx_division(-calc_sin, param.scale);
 	fixed32 pc = fx_division(calc_sin, param.scale);

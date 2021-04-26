@@ -5,9 +5,11 @@
 #include "hexagon_reduced_img_bin.h"
 
 #include "pedge_mid_img_bin.h"
+#include "pedge_mid_bl_img_bin.h"
 #include "pedge_vert_img_bin.h"
 
 #include "pedge_diag_br_img_bin.h"
+#include "pedge_diag_bl_img_bin.h"
 
 #include "lcd_impl.h"
 #include "input.h"
@@ -16,7 +18,7 @@
 #include <gba_systemcalls.h>
 
 //#
-static u8* map = (void*)(0x6000000 + (31<<11));
+static u8* base_map = (void*)(0x6000000 + (31<<11));
 
 INLINE void* TileToPtr(u32 tile) {
     return VRAM_BASE + (tile << 4);
@@ -27,11 +29,11 @@ void patterns_init() {
 }
 
 INLINE void* addr_from_tile(u8 x, u8 y) {
-    return map + ((y * 32) + x);
+    return base_map + ((y * 32) + x);
 }
 
 INLINE u32 index_from_tile(u8 x, u8 y) {
-    u32 toreturn = (((y*32) + x));
+    u32 toreturn = (((y << 5) | x));
     return toreturn;
 }
 
@@ -64,9 +66,18 @@ INLINE void CalcDiag(struct diagcalc* data, const int dirX, const int dirY) {
 }
 //#
 
-static const u32 pedge_mid_pos = 25; // size 5
-static const u32 pedge_diag_br_pos = 30; // size 6 * 3 = 18
-static const u32 pedge_vert_pos = 48; // size 2
+static const u32 pedge_diag_br_pos = 25; // size 6 * 3 = 18
+static const u32 pedge_diag_bl_pos = 43; // size 6 * 3 = 18
+static const u32 pedge_diag_ul_pos = 61; // size 6 * 3 = 18
+static const u32 pedge_diag_ur_pos = 79; // size 6 * 3 = 18
+
+static const u32 pedge_mid_br_pos = 97; // size 5
+static const u32 pedge_mid_bl_pos = 102; // size 5
+static const u32 pedge_mid_ul_pos = 107; // size 5
+static const u32 pedge_mid_ur_pos = 112; // size 5
+
+static const u32 pedge_vert_r_pos = 117; // size 2
+static const u32 pedge_vert_l_pos = 119; // size 2
 
 const int debug_tile = 3;
 
@@ -76,7 +87,223 @@ const int subindex_min = 0;
 const int subindex_max = 15;
 
 static int index = 3;
-static int subindex = 0;
+static int subindex = 12;
+
+static void draw_rm(u8* map) {
+
+    struct diagcalc current = {
+        17, 17, 1
+    };
+
+    // Find the starting position (could be pulled out)
+    for (unsigned int i=0; i<index*3; i++) {
+        CalcDiag(&current, 1, 1);
+    }
+
+    // == R VERT LINE == 
+    int vert_start_x = current.x;
+    int vert_start_y = current.y;
+    if (subindex <= 5) {
+        vert_start_x -= 1;
+        vert_start_y -= 2;
+    } else if (subindex <= 13) {
+        vert_start_y -= 1;
+    } else {
+        vert_start_x += 1;
+        vert_start_y -= 1;
+    }
+
+    if (!KEY_HELD(B)) {
+        // One line
+        write_to_tile(map, vert_start_x, vert_start_y, pedge_vert_r_pos + 0);
+        write_to_tile(map, vert_start_x+1, vert_start_y, pedge_vert_r_pos + 1);
+
+        // Another line
+        write_to_tile(map, vert_start_x, vert_start_y-1, pedge_vert_r_pos + 0);
+        write_to_tile(map, vert_start_x+1, vert_start_y-1, pedge_vert_r_pos + 1);
+    }
+}
+
+static void draw_br(u8* map) {
+    struct diagcalc current = {
+        17, 17, 1
+    };
+
+    // Find the starting position
+    for (unsigned int i=0; i<index*3; i++) {
+        CalcDiag(&current, 1, 1);
+    }
+
+    //# == BR BORDER ==
+    unsigned int diag_x = current.x;
+    unsigned int diag_y = current.y;
+
+    unsigned int diag_offset = 12; // Both L and R
+
+    // Correct offsets
+    if (subindex <= 7) {
+        
+    } else if (subindex <= 9) {
+        diag_x+=1;
+    } else {
+        diag_x+=1;
+        diag_y+=1;
+    }
+
+    if (!KEY_HELD(A)) {
+        // Tile 0 only needs to be loaded 8-16, and if it is loaded earlier it clips into the center hexagon
+        if (subindex >= 8) {
+            write_to_tile(map, diag_x-2, diag_y-1, pedge_diag_br_pos + diag_offset + 0);
+        }
+        write_to_tile(map, diag_x-1, diag_y-1, pedge_diag_br_pos + diag_offset + 1);
+        write_to_tile(map, diag_x, diag_y-1, pedge_diag_br_pos + diag_offset + 2);
+        write_to_tile(map, diag_x-2, diag_y, pedge_diag_br_pos + diag_offset + 3);
+        write_to_tile(map, diag_x-1, diag_y, pedge_diag_br_pos + diag_offset + 4);
+        write_to_tile(map, diag_x, diag_y, pedge_diag_br_pos + diag_offset + 5);
+    }
+
+    //#
+    
+    //# == BR MID LINE == 
+    int mid_start_x = current.x;
+    int mid_start_y = current.y;
+    int tile_index;
+
+    // Adjust starting position and tile
+    // to fit the diagonal section
+    if (subindex <= 3) {
+        mid_start_x -= 3;
+        mid_start_y += 0;
+        tile_index = 0;
+    } else if (subindex <= 7) {
+        mid_start_x -= 4;
+        mid_start_y += 1;
+        tile_index = 4;
+    } else if (subindex <= 9) {
+        mid_start_x -= 3;
+        mid_start_y += 1;
+        tile_index = 3;
+    } else if (subindex <= 11) {
+        mid_start_x -= 3;
+        mid_start_y += 1;
+        tile_index = 1;
+    } else {
+        mid_start_x -= 2;
+        mid_start_y += 1;
+        tile_index = 0;
+    }
+
+    if (!KEY_HELD(B)) {
+        // Do the first row
+        for (int dx = 0; dx <= tile_index; dx++) {
+            if (mid_start_x + dx >= 16)
+                write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_br_pos + dx);
+        }
+
+        while (mid_start_x >= 14) {
+            mid_start_x -= 2;
+            mid_start_y += 1;
+
+            for (int dx = 0; dx <= 4; dx++) {
+                if (mid_start_x + dx >= 16)
+                    write_to_tile(map, mid_start_x  + dx, mid_start_y, pedge_mid_br_pos + dx);
+            }   
+        }
+    }
+    
+    //#
+}
+
+static void draw_bl(u8* map) {
+    struct diagcalc current = {
+        14, 17, 1
+    };
+
+    for (unsigned int i=0; i<index*3; i++) {
+        CalcDiag(&current, -1, 1);
+    }
+
+    //# == BL BORDER ==
+    unsigned int diag_x = current.x;
+    unsigned int diag_y = current.y;
+
+    unsigned int diag_offset = 12; // Both L and R
+
+    // Correct offsets
+    if (subindex <= 7) {
+        
+    } else if (subindex <= 9) {
+        diag_x-=1;
+    } else {
+        diag_x-=1;
+        diag_y+=1;
+    }
+
+    if (!KEY_HELD(A)) {
+        write_to_tile(map, diag_x, diag_y-1, pedge_diag_bl_pos + diag_offset + 0);
+        write_to_tile(map, diag_x+1, diag_y-1, pedge_diag_bl_pos + diag_offset + 1);
+
+        // Tile 2 only needs to be loaded 8-16, and if it is loaded earlier it clips into the center hexagon
+        if (subindex >= 8) {
+            write_to_tile(map, diag_x+2, diag_y-1, pedge_diag_bl_pos + diag_offset + 2);
+        }
+
+        write_to_tile(map, diag_x, diag_y, pedge_diag_bl_pos + diag_offset + 3);
+        write_to_tile(map, diag_x+1, diag_y, pedge_diag_bl_pos + diag_offset + 4);
+        write_to_tile(map, diag_x+2, diag_y, pedge_diag_bl_pos + diag_offset + 5);
+    }
+
+    //#
+
+    //# == BL MID LINE == 
+    int mid_start_x = current.x;
+    int mid_start_y = current.y;
+    int tile_index = 0;
+
+    // Adjust starting position and tile
+    // to fit the diagonal section
+    if (subindex <= 3) {
+        mid_start_x -= 1;
+        mid_start_y += 0;
+        tile_index = 4;
+    } else if (subindex <= 7) {
+        mid_start_x += 0;
+        mid_start_y += 1;
+        tile_index = 1;
+    } else if (subindex <= 9) {
+        mid_start_x -= 1;
+        mid_start_y += 1;
+        tile_index = 1;
+    } else if (subindex <= 11) {
+        mid_start_x -= 1;
+        mid_start_y += 1;
+        tile_index = 3;
+    } else {
+        mid_start_x -= 2;
+        mid_start_y += 1;
+        tile_index = 4;
+    }
+
+    if (!KEY_HELD(B)) {
+        // Do the first row
+        for (int dx = tile_index; dx <= 4; dx++) {
+            if (mid_start_x + dx <= 15)
+                write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_bl_pos + dx);
+        }
+
+        while (mid_start_x <= 15) {
+            mid_start_x += 2;
+            mid_start_y += 1;
+
+            for (int dx = 0; dx <= 4; dx++) {
+                if (mid_start_x + dx <= 15)
+                    write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_bl_pos + dx);
+            }   
+        }
+    }
+    
+    //#
+}
 
 void patterns_update() {
 
@@ -104,19 +331,31 @@ void patterns_update() {
     // Load current tiles
     CpuFastSet( // Mid
         pedge_mid_img_bin + (mid_subindex * 64 * 5),
-        TileToPtr(pedge_mid_pos),
+        TileToPtr(pedge_mid_br_pos),
         COPY32 | 16 * 5
     );
 
-    CpuFastSet( // Diag
+    CpuFastSet( // Mid BL
+        pedge_mid_bl_img_bin + (mid_subindex * 64 * 5),
+        TileToPtr(pedge_mid_bl_pos),
+        COPY32 | 16 * 5
+    );
+
+    CpuFastSet( // Diag BR
         pedge_diag_br_img_bin + (diag_subindex * 64 * 18),
         TileToPtr(pedge_diag_br_pos),
         COPY32 | 16 * 18
     );
 
+    CpuFastSet( // Diag BL
+        pedge_diag_bl_img_bin + (diag_subindex * 64 * 18),
+        TileToPtr(pedge_diag_bl_pos),
+        COPY32 | 16 * 18
+    );
+
     CpuFastSet( // Vert
         pedge_vert_img_bin + (vert_subindex * 64 * 2),
-        TileToPtr(pedge_vert_pos),
+        TileToPtr(pedge_vert_r_pos),
         COPY32 | 16 * 2
     );
 
@@ -126,112 +365,11 @@ void patterns_update() {
     u8 current_map[1024];
     CpuFastSet(hexagon_map_bin, current_map, COPY32 | 256);
 
-    struct diagcalc current = {
-        17, 17, 1
-    };
-
-    // Find the starting position
-    for (unsigned int i=0; i<index*3; i++) {
-        CalcDiag(&current, 1, 1);
-    }
-
-    // == BR BORDER ==
-    unsigned int diag_x = current.x;
-    unsigned int diag_y = current.y;
-
-    unsigned int diag_offset = 12; // Both L and R
-
-    // Correct offsets
-    if (subindex <= 7) {
-        
-    } else if (subindex <= 9) {
-        diag_x+=1;
-    } else {
-        diag_x+=1;
-        diag_y+=1;
-    }
-
-    if (!KEY_HELD(A)) {
-        // Tile 0 only needs to be loaded 8-16, and if it is loaded earlier it clips into the center hexagon
-        if (subindex >= 8) {
-            write_to_tile(current_map, diag_x-2, diag_y-1, pedge_diag_br_pos + diag_offset + 0);
-        }
-        write_to_tile(current_map, diag_x-1, diag_y-1, pedge_diag_br_pos + diag_offset + 1);
-        write_to_tile(current_map, diag_x, diag_y-1, pedge_diag_br_pos + diag_offset + 2);
-        write_to_tile(current_map, diag_x-2, diag_y, pedge_diag_br_pos + diag_offset + 3);
-        write_to_tile(current_map, diag_x-1, diag_y, pedge_diag_br_pos + diag_offset + 4);
-        write_to_tile(current_map, diag_x, diag_y, pedge_diag_br_pos + diag_offset + 5);
-    }
-
-    // == R VERT LINE == 
-    int vert_start_x = current.x;
-    int vert_start_y = current.y;
-    if (subindex <= 5) {
-        vert_start_x -= 1;
-        vert_start_y -= 2;
-    } else if (subindex <= 13) {
-        vert_start_y -= 1;
-    } else {
-        vert_start_x += 1;
-        vert_start_y -= 1;
-    }
-
-    if (!KEY_HELD(B)) {
-        // One line
-        write_to_tile(current_map, vert_start_x, vert_start_y, pedge_vert_pos + 0);
-        write_to_tile(current_map, vert_start_x+1, vert_start_y, pedge_vert_pos + 1);
-
-        // Another line
-        write_to_tile(current_map, vert_start_x, vert_start_y-1, pedge_vert_pos + 0);
-        write_to_tile(current_map, vert_start_x+1, vert_start_y-1, pedge_vert_pos + 1);
-    }
-
-    // == BR MID LINE == 
-    int mid_start_x = current.x;
-    int mid_start_y = current.y;
-    int tile_index;
-
-    // Adjust starting position and tile
-    // to fit the diagonal section
-    if (subindex <= 3) {
-        mid_start_x -= 2;
-        mid_start_y += 0;
-        tile_index = 1;
-    } else if (subindex <= 7) {
-        mid_start_x -= 0;
-        mid_start_y += 1;
-        tile_index = 4;
-    } else if (subindex <= 9) {
-        mid_start_x -= 0;
-        mid_start_y += 1;
-        tile_index = 3;
-    } else if (subindex <= 11) {
-        mid_start_x -= 1;
-        mid_start_y += 1;
-        tile_index = 2;
-    } else {
-        mid_start_x -= 1;
-        mid_start_y += 1;
-        tile_index = 1;
-    }
-
-    // Do the first row
-    for (int dx = 0; dx <= tile_index; dx++) {
-        if (mid_start_x - tile_index + dx >= 16)
-            write_to_tile(current_map, mid_start_x - tile_index + dx, mid_start_y, pedge_mid_pos + dx);
-    }
-
-    while (mid_start_x >= 16) {
-        mid_start_x -= 2;
-        mid_start_y += 1;
-
-        for (int dx = 0; dx <= 4; dx++) {
-            if (mid_start_x - tile_index + dx >= 16)
-                write_to_tile(current_map, mid_start_x - tile_index + dx, mid_start_y, pedge_mid_pos + dx);
-        }   
-    }
+    draw_br(current_map);
+    draw_bl(current_map);
+    draw_rm(current_map);
 
     // == FINISH == 
     // Copy the WRAM map into VRAM
-    CpuFastSet(current_map, map, COPY32 | 256);
+    CpuFastSet(current_map, base_map, COPY32 | 256);
 }
