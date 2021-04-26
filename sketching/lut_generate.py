@@ -10,9 +10,10 @@ fixed_point_size = 8
 
 output_filename = table_name + ".c"
 
-os.remove(output_filename)
+if os.path.exists(output_filename):
+    os.remove(output_filename)
 
-with open(output_filename, "a") as f:
+with open(output_filename, "w") as f:
     f.write(f"const short {table_name}[{count}] = {{\n")
 
     column_count = 0
@@ -21,7 +22,7 @@ with open(output_filename, "a") as f:
         current_index = i*2*math.pi / count
         calc = function(current_index)
         
-        fixedpoint = int(calc * 256)
+        fixedpoint = int(round(calc * 256))
         
         if column_count == 0:
             f.write("    ")
