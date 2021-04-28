@@ -68,15 +68,12 @@ static const u32 pedge_vert_l_pos = 119; // size 2
 
 const int debug_tile = 3;
 
-const int index_min = 0;
-const int index_max = 8;
-const int subindex_min = 0;
-const int subindex_max = 15;
+#define DRAW_MID_CHECK diag_offset != 0
 
-static int index = 3;
-static int subindex = 0;
+static void draw_rm(register u8* map, register struct pattern_data* pattern) {
+    unsigned int index = pattern->index;
+    unsigned int subindex = pattern->subindex;
 
-static void draw_rm(u8* map) {
     unsigned int current_x = 17 + (index*2);
     unsigned int current_y = 17 + index;
 
@@ -103,7 +100,10 @@ static void draw_rm(u8* map) {
     }
 }
 
-static void draw_lm(u8* map) {
+static void draw_lm(register u8* map, register struct pattern_data* pattern) {
+    unsigned int index = pattern->index;
+    unsigned int subindex = pattern->subindex;
+
     unsigned int current_x = 14 - (index*2);
     unsigned int current_y = 17 + index;
 
@@ -134,16 +134,16 @@ static void draw_lm(u8* map) {
     }
 }
 
-static void draw_br(u8* map) {
+static void draw_br(register u8* map, register struct pattern_data* pattern, unsigned int diag_offset) {
+    unsigned int index = pattern->index;
+    unsigned int subindex = pattern->subindex;
+
     unsigned int current_x = 17 + (index*2);
     unsigned int current_y = 17 + index;
-
 
     //# == BR BORDER ==
     unsigned int diag_x = current_x;
     unsigned int diag_y = current_y;
-
-    unsigned int diag_offset = 12; // Both L and R
 
     // Correct offsets
     if (subindex <= 7) {
@@ -170,64 +170,69 @@ static void draw_br(u8* map) {
     //#
     
     //# == BR MID LINE == 
-    int mid_start_x = current_x;
-    int mid_start_y = current_y;
-    int tile_index;
 
-    // Adjust starting position and tile
-    // to fit the diagonal section
-    if (subindex <= 3) {
-        mid_start_x -= 3;
-        mid_start_y += 0;
-        tile_index = 0;
-    } else if (subindex <= 7) {
-        mid_start_x -= 4;
-        mid_start_y += 1;
-        tile_index = 4;
-    } else if (subindex <= 9) {
-        mid_start_x -= 3;
-        mid_start_y += 1;
-        tile_index = 3;
-    } else if (subindex <= 11) {
-        mid_start_x -= 3;
-        mid_start_y += 1;
-        tile_index = 1;
-    } else {
-        mid_start_x -= 2;
-        mid_start_y += 1;
-        tile_index = 0;
-    }
+    // Don't draw the mid line if we are only drawing the vertical section
+    if (DRAW_MID_CHECK) {
+        int mid_start_x = current_x;
+        int mid_start_y = current_y;
+        int tile_index;
 
-    if (!KEY_HELD(B)) {
-        // Do the first row
-        for (int dx = 0; dx <= tile_index; dx++) {
-            if (mid_start_x + dx >= 16)
-                write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_br_pos + dx);
-        }
-
-        while (mid_start_x >= 14) {
+        // Adjust starting position and tile
+        // to fit the diagonal section
+        if (subindex <= 3) {
+            mid_start_x -= 3;
+            mid_start_y += 0;
+            tile_index = 0;
+        } else if (subindex <= 7) {
+            mid_start_x -= 4;
+            mid_start_y += 1;
+            tile_index = 4;
+        } else if (subindex <= 9) {
+            mid_start_x -= 3;
+            mid_start_y += 1;
+            tile_index = 3;
+        } else if (subindex <= 11) {
+            mid_start_x -= 3;
+            mid_start_y += 1;
+            tile_index = 1;
+        } else {
             mid_start_x -= 2;
             mid_start_y += 1;
+            tile_index = 0;
+        }
 
-            for (int dx = 0; dx <= 4; dx++) {
+        if (!KEY_HELD(B)) {
+            // Do the first row
+            for (int dx = 0; dx <= tile_index; dx++) {
                 if (mid_start_x + dx >= 16)
-                    write_to_tile(map, mid_start_x  + dx, mid_start_y, pedge_mid_br_pos + dx);
-            }   
+                    write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_br_pos + dx);
+            }
+
+            while (mid_start_x >= 14) {
+                mid_start_x -= 2;
+                mid_start_y += 1;
+
+                for (int dx = 0; dx <= 4; dx++) {
+                    if (mid_start_x + dx >= 16)
+                        write_to_tile(map, mid_start_x  + dx, mid_start_y, pedge_mid_br_pos + dx);
+                }   
+            }
         }
     }
     
     //#
 }
 
-static void draw_bl(u8* map) {
+static void draw_bl(register u8* map, register struct pattern_data* pattern, unsigned int diag_offset) {
+    unsigned int index = pattern->index;
+    unsigned int subindex = pattern->subindex;
+
     unsigned int current_x = 14 - (index*2);
     unsigned int current_y = 17 + index;
 
     //# == BL BORDER ==
     unsigned int diag_x = current_x;
     unsigned int diag_y = current_y;
-
-    unsigned int diag_offset = 12; // Both L and R
 
     // Correct offsets
     if (subindex <= 7) {
@@ -256,64 +261,70 @@ static void draw_bl(u8* map) {
     //#
 
     //# == BL MID LINE == 
-    int mid_start_x = current_x;
-    int mid_start_y = current_y;
-    int tile_index;
 
-    // Adjust starting position and tile
-    // to fit the diagonal section
-    if (subindex <= 3) {
-        mid_start_x -= 1;
-        mid_start_y += 0;
-        tile_index = 4;
-    } else if (subindex <= 7) {
-        mid_start_x += 0;
-        mid_start_y += 1;
-        tile_index = 1;
-    } else if (subindex <= 9) {
-        mid_start_x -= 1;
-        mid_start_y += 1;
-        tile_index = 1;
-    } else if (subindex <= 11) {
-        mid_start_x -= 1;
-        mid_start_y += 1;
-        tile_index = 3;
-    } else {
-        mid_start_x -= 2;
-        mid_start_y += 1;
-        tile_index = 4;
-    }
+    // Don't draw the mid line if we are only drawing the vertical section
+    if (DRAW_MID_CHECK) {
 
-    if (!KEY_HELD(B)) {
-        // Do the first row
-        for (int dx = tile_index; dx <= 4; dx++) {
-            if (mid_start_x + dx <= 15)
-                write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_bl_pos + dx);
+        int mid_start_x = current_x;
+        int mid_start_y = current_y;
+        int tile_index;
+
+        // Adjust starting position and tile
+        // to fit the diagonal section
+        if (subindex <= 3) {
+            mid_start_x -= 1;
+            mid_start_y += 0;
+            tile_index = 4;
+        } else if (subindex <= 7) {
+            mid_start_x += 0;
+            mid_start_y += 1;
+            tile_index = 1;
+        } else if (subindex <= 9) {
+            mid_start_x -= 1;
+            mid_start_y += 1;
+            tile_index = 1;
+        } else if (subindex <= 11) {
+            mid_start_x -= 1;
+            mid_start_y += 1;
+            tile_index = 3;
+        } else {
+            mid_start_x -= 2;
+            mid_start_y += 1;
+            tile_index = 4;
         }
 
-        while (mid_start_x <= 15) {
-            mid_start_x += 2;
-            mid_start_y += 1;
-
-            for (int dx = 0; dx <= 4; dx++) {
+        if (!KEY_HELD(B)) {
+            // Do the first row
+            for (int dx = tile_index; dx <= 4; dx++) {
                 if (mid_start_x + dx <= 15)
                     write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_bl_pos + dx);
-            }   
+            }
+
+            while (mid_start_x <= 15) {
+                mid_start_x += 2;
+                mid_start_y += 1;
+
+                for (int dx = 0; dx <= 4; dx++) {
+                    if (mid_start_x + dx <= 15)
+                        write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_bl_pos + dx);
+                }   
+            }
         }
     }
     
     //#
 }
 
-static void draw_ul(u8* map) {
+static void draw_ul(register u8* map, register struct pattern_data* pattern, unsigned int diag_offset) {
+    unsigned int index = pattern->index;
+    unsigned int subindex = pattern->subindex;
+
     unsigned int current_x = 14 - (index*2);
     unsigned int current_y = 15 - index;
 
     //# == UL BORDER ==
     unsigned int diag_x = current_x;
     unsigned int diag_y = current_y;    
-
-    unsigned int diag_offset = 12; // both L and R
 
     if (subindex <= 7) {
 
@@ -340,55 +351,60 @@ static void draw_ul(u8* map) {
 
     //# == UL MID LINE ==
 
-    int mid_start_x = current_x;
-    int mid_start_y = current_y;
-    int tile_index;
+    // Don't draw the mid line if we are only drawing the vertical section
+    if (DRAW_MID_CHECK) {
 
-    if (subindex <= 3) {
-        mid_start_x -= 1;
-        mid_start_y -= 0;
-        tile_index = 4;
-    } else if (subindex <= 7) {
-        mid_start_x -= 0;
-        mid_start_y -= 1;
-        tile_index = 0;
-    } else if (subindex <= 9) {
-        mid_start_x -= 1;
-        mid_start_y -= 1;
-        tile_index = 1;
-    } else if (subindex <= 11) {
-        mid_start_x -= 1;
-        mid_start_y -= 1;
-        tile_index = 3;
-    } else {
-        mid_start_x -= 2;
-        mid_start_y -= 1;
-        tile_index = 4;
-    }
+        int mid_start_x = current_x;
+        int mid_start_y = current_y;
+        int tile_index;
 
-    if (!KEY_HELD(B)) {
-        // Do the first row
-        for (int dx = tile_index; dx <= 4; dx++) {
-            if (mid_start_x + dx <= 15)
-                write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_ul_pos + dx);
+        if (subindex <= 3) {
+            mid_start_x -= 1;
+            mid_start_y -= 0;
+            tile_index = 4;
+        } else if (subindex <= 7) {
+            mid_start_x -= 0;
+            mid_start_y -= 1;
+            tile_index = 0;
+        } else if (subindex <= 9) {
+            mid_start_x -= 1;
+            mid_start_y -= 1;
+            tile_index = 1;
+        } else if (subindex <= 11) {
+            mid_start_x -= 1;
+            mid_start_y -= 1;
+            tile_index = 3;
+        } else {
+            mid_start_x -= 2;
+            mid_start_y -= 1;
+            tile_index = 4;
         }
 
-        while (mid_start_x <= 15) {
-            mid_start_x += 2;
-            mid_start_y -= 1;
-
-            for (int dx = 0; dx <= 4; dx++) {
+        if (!KEY_HELD(B)) {
+            // Do the first row
+            for (int dx = tile_index; dx <= 4; dx++) {
                 if (mid_start_x + dx <= 15)
                     write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_ul_pos + dx);
             }
 
+            while (mid_start_x <= 15) {
+                mid_start_x += 2;
+                mid_start_y -= 1;
+
+                for (int dx = 0; dx <= 4; dx++) {
+                    if (mid_start_x + dx <= 15)
+                        write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_ul_pos + dx);
+                }
+
+            }
         }
     }
-
     //#
 }
 
-static void draw_ur(u8* map) {
+static void draw_ur(register u8* map, register struct pattern_data* pattern, unsigned int diag_offset) {
+    unsigned int index = pattern->index;
+    unsigned int subindex = pattern->subindex;
 
     unsigned int current_x = 17 + (2 * index);
     unsigned int current_y = 15 - index;
@@ -396,8 +412,6 @@ static void draw_ur(u8* map) {
     //# == UR BORDER ==
     unsigned int diag_x = current_x;
     unsigned int diag_y = current_y;
-
-    unsigned int diag_offset = 12; // Both L and R
 
     if (subindex <= 7) {
 
@@ -423,79 +437,71 @@ static void draw_ur(u8* map) {
     //#
 
     //# == UR MID LINE ==
-    int mid_start_x = current_x;
-    int mid_start_y = current_y;
-    int tile_index;
 
-    // Adjust starting position and tile
-    // to fit the diagonal section
-    if (subindex <= 3) {
-        mid_start_x -= 3;
-        mid_start_y -= 0;
-        tile_index = 0;
-    } else if (subindex <= 7) {
-        mid_start_x -= 4;
-        mid_start_y -= 1;
-        tile_index = 4;
-    } else if (subindex <= 9) {
-        mid_start_x -= 3;
-        mid_start_y -= 1;
-        tile_index = 3;
-    } else if (subindex <= 11) {
-        mid_start_x -= 3;
-        mid_start_y -= 1;
-        tile_index = 1;
-    } else {
-        mid_start_x -= 2;
-        mid_start_y -= 1;
-        tile_index = 0;
-    }
+    // Don't draw the mid line if we are only drawing the vertical section
+    if (DRAW_MID_CHECK) {
+        int mid_start_x = current_x;
+        int mid_start_y = current_y;
+        int tile_index;
 
-    if (!KEY_HELD(B)) {
-        // Do the first row
-        for (int dx = 0; dx <= tile_index; dx++) {
-            if (mid_start_x + dx >= 16)
-                write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_ur_pos + dx);
-        }
-
-        while (mid_start_x >= 14) {
+        // Adjust starting position and tile
+        // to fit the diagonal section
+        if (subindex <= 3) {
+            mid_start_x -= 3;
+            mid_start_y -= 0;
+            tile_index = 0;
+        } else if (subindex <= 7) {
+            mid_start_x -= 4;
+            mid_start_y -= 1;
+            tile_index = 4;
+        } else if (subindex <= 9) {
+            mid_start_x -= 3;
+            mid_start_y -= 1;
+            tile_index = 3;
+        } else if (subindex <= 11) {
+            mid_start_x -= 3;
+            mid_start_y -= 1;
+            tile_index = 1;
+        } else {
             mid_start_x -= 2;
             mid_start_y -= 1;
+            tile_index = 0;
+        }
 
-            for (int dx = 0; dx <= 4; dx++) {
+        if (!KEY_HELD(B)) {
+            // Do the first row
+            for (int dx = 0; dx <= tile_index; dx++) {
                 if (mid_start_x + dx >= 16)
                     write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_ur_pos + dx);
-            }   
+            }
+
+            while (mid_start_x >= 14) {
+                mid_start_x -= 2;
+                mid_start_y -= 1;
+
+                for (int dx = 0; dx <= 4; dx++) {
+                    if (mid_start_x + dx >= 16)
+                        write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_ur_pos + dx);
+                }   
+            }
         }
+
     }
 
     //#
 }
 
-void patterns_update() {
+void draw_pattern(struct pattern_data* pattern) {
 
-    if (KEY_DOWN(Up)) subindex--;
-    if (KEY_DOWN(Down)) subindex++;
-    //subindex--;
-
-    if (subindex < subindex_min) {
-        subindex = subindex_max;
-        index--;
-    } else if (subindex > subindex_max) {
-        subindex = subindex_min;
-        index++;
+    if (pattern->index > 8) {
+        pattern->index = 8;
     }
-    if (index < index_min) index = index_max;
-    else if (index > index_max) index = index_min;
 
-    numdisplay_update(0, index);
-    numdisplay_update(1, subindex);
+    int diag_subindex = pattern->subindex; // Diagonal is 16 frames
+    int mid_subindex = pattern->subindex & 3; // Mid is 4 frames
+    int vert_subindex = pattern->subindex & 7; // Vert is 8 frames
 
-    int diag_subindex = subindex; // Diagonal is 16 frames
-    int mid_subindex = subindex & 3; // Mid is 4 frames
-    int vert_subindex = subindex & 7; // Vert is 8 frames
-
-    // Load current tiles
+    //# Load current tiles
     CpuFastSet( // Mid BR
         pedge_mid_br_img_bin + (mid_subindex * 64 * 5),
         TileToPtr(pedge_mid_br_pos),
@@ -555,6 +561,7 @@ void patterns_update() {
         TileToPtr(pedge_diag_ul_pos),
         COPY32 | 16 * 18
     );
+    //#
 
     // Initialise the WRAM map
     // I can't mess about with VRAM directly too well, poking with unaligned data there straight up doesn't work.
@@ -562,13 +569,42 @@ void patterns_update() {
     u8 current_map[1024];
     CpuFastSet(hexagon_map_bin, current_map, COPY32 | 256);
 
-    draw_br(current_map);
-    draw_bl(current_map);
-    draw_ul(current_map);
-    draw_ur(current_map);
+    if (pattern->a && pattern->b) {
+        draw_ur(current_map, pattern, 12);
+    } else if (pattern->a) {
+        draw_ur(current_map, pattern, 6);
+    } else if (pattern->b) {
+        draw_ur(current_map, pattern, 0);
+    }
 
-    draw_lm(current_map);
-    draw_rm(current_map);
+    if (pattern->b && pattern->c) {
+        draw_br(current_map, pattern, 12);
+    } else if (pattern->b) {
+        draw_br(current_map, pattern, 0);
+    } else if (pattern->c) {
+        draw_br(current_map, pattern, 6);
+    }
+
+    if (pattern->d && pattern->e) {
+        draw_bl(current_map, pattern, 12);
+    } else if (pattern->d) {
+        draw_bl(current_map, pattern, 6);
+    } else if (pattern->e) {
+        draw_bl(current_map, pattern, 0);
+    }
+
+    if (pattern->e && pattern->f) {
+        draw_ul(current_map, pattern, 12);
+    } else if (pattern->e) {
+        draw_ul(current_map, pattern, 0);
+    } else if (pattern->f) {
+        draw_ul(current_map, pattern, 6);
+    }
+
+    if (pattern->b)
+        draw_rm(current_map, pattern);
+    if (pattern->e)
+        draw_lm(current_map, pattern);
 
     // == FINISH == 
     // Copy the WRAM map into VRAM

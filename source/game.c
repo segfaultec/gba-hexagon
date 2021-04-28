@@ -69,7 +69,14 @@ void game_init() {
 static fixed32 angle = 0;
 
 void game_update() { 
-	patterns_update();
+
+	struct pattern_data pattern = {
+		.index = 2,
+		.subindex = 5,
+		.a = true, .b = true, .c = true, .e = true
+	};
+
+	draw_pattern(&pattern);
 
 	struct calc_bg_rot_param bgparam ={
 		.ptr = BGAFFINE2,
