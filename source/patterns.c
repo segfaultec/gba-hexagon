@@ -205,7 +205,7 @@ static void draw_br(u8* map) {
                 write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_br_pos + dx);
         }
 
-        while (mid_start_x >= 15) {
+        while (mid_start_x >= 14) {
             mid_start_x -= 2;
             mid_start_y += 1;
 
@@ -458,7 +458,7 @@ static void draw_ur(u8* map) {
                 write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_ur_pos + dx);
         }
 
-        while (mid_start_x >= 15) {
+        while (mid_start_x >= 14) {
             mid_start_x -= 2;
             mid_start_y -= 1;
 
