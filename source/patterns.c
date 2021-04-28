@@ -29,10 +29,6 @@ INLINE void* TileToPtr(u32 tile) {
     return VRAM_BASE + (tile << 4);
 }
 
-void patterns_init() {
-    CpuFastSet(hexagon_reduced_img_bin, VRAM_BASE, COPY32 | (hexagon_reduced_img_bin_size >> 2));
-}
-
 INLINE void* addr_from_tile(u8 x, u8 y) {
     return base_map + ((y * 32) + x);
 }
@@ -68,21 +64,23 @@ static const u32 pedge_vert_l_pos = 119; // size 2
 
 const int debug_tile = 3;
 
+static u8 current_subindex;
+static u8 current_map[1024];
+
 #define DRAW_MID_CHECK diag_offset != 0
 
-static void draw_rm(register u8* map, register struct pattern_data* pattern) {
+static void draw_rm(register struct pattern_data* pattern) {
     unsigned int index = pattern->index;
-    unsigned int subindex = pattern->subindex;
 
     unsigned int current_x = 17 + (index*2);
     unsigned int current_y = 17 + index;
 
     int vert_start_x = current_x;
     int vert_start_y = current_y;
-    if (subindex <= 5) {
+    if (current_subindex <= 5) {
         vert_start_x -= 1;
         vert_start_y -= 2;
-    } else if (subindex <= 13) {
+    } else if (current_subindex <= 13) {
         vert_start_y -= 1;
     } else {
         vert_start_x += 1;
@@ -91,31 +89,30 @@ static void draw_rm(register u8* map, register struct pattern_data* pattern) {
 
     if (!KEY_HELD(B)) {
         int line_amount = index*2 - 1;
-        if (subindex >= 6) line_amount += 2;
+        if (current_subindex >= 6) line_amount += 2;
 
         for (int i=0; i<line_amount; i++) {
-            write_to_tile(map, vert_start_x, vert_start_y-i, pedge_vert_r_pos + 0);
-            write_to_tile(map, vert_start_x+1, vert_start_y-i, pedge_vert_r_pos + 1);
+            write_to_tile(current_map, vert_start_x, vert_start_y-i, pedge_vert_r_pos + 0);
+            write_to_tile(current_map, vert_start_x+1, vert_start_y-i, pedge_vert_r_pos + 1);
         }
     }
 }
 
-static void draw_lm(register u8* map, register struct pattern_data* pattern) {
+static void draw_lm(register struct pattern_data* pattern) {
     unsigned int index = pattern->index;
-    unsigned int subindex = pattern->subindex;
 
     unsigned int current_x = 14 - (index*2);
     unsigned int current_y = 17 + index;
 
     int vert_start_x = current_x;
     int vert_start_y = current_y;
-    if (subindex <= 5) {
+    if (current_subindex <= 5) {
         vert_start_x -= 0;
         vert_start_y -= 2;
-    } else if (subindex <= 9) {
+    } else if (current_subindex <= 9) {
         vert_start_x -= 1;
         vert_start_y -= 2;
-    } else if (subindex <= 13) {
+    } else if (current_subindex <= 13) {
         vert_start_x -= 1;
         vert_start_y -= 1;
     } else {
@@ -125,18 +122,17 @@ static void draw_lm(register u8* map, register struct pattern_data* pattern) {
 
     if (!KEY_HELD(B)) {
         int line_amount = index*2 - 1;
-        if (subindex >= 10) line_amount += 2;
+        if (current_subindex >= 10) line_amount += 2;
 
         for (int i=0; i<line_amount; i++) {
-            write_to_tile(map, vert_start_x, vert_start_y-i, pedge_vert_l_pos + 0);
-            write_to_tile(map, vert_start_x+1, vert_start_y-i, pedge_vert_l_pos + 1);
+            write_to_tile(current_map, vert_start_x, vert_start_y-i, pedge_vert_l_pos + 0);
+            write_to_tile(current_map, vert_start_x+1, vert_start_y-i, pedge_vert_l_pos + 1);
         }
     }
 }
 
-static void draw_br(register u8* map, register struct pattern_data* pattern, unsigned int diag_offset) {
+static void draw_br(register struct pattern_data* pattern, unsigned int diag_offset) {
     unsigned int index = pattern->index;
-    unsigned int subindex = pattern->subindex;
 
     unsigned int current_x = 17 + (index*2);
     unsigned int current_y = 17 + index;
@@ -146,9 +142,9 @@ static void draw_br(register u8* map, register struct pattern_data* pattern, uns
     unsigned int diag_y = current_y;
 
     // Correct offsets
-    if (subindex <= 7) {
+    if (current_subindex <= 7) {
         
-    } else if (subindex <= 9) {
+    } else if (current_subindex <= 9) {
         diag_x+=1;
     } else {
         diag_x+=1;
@@ -156,15 +152,14 @@ static void draw_br(register u8* map, register struct pattern_data* pattern, uns
     }
 
     if (!KEY_HELD(A)) {
-        // Tile 0 only needs to be loaded 8-16, and if it is loaded earlier it clips into the center hexagon
-        if (subindex >= 8) {
-            write_to_tile(map, diag_x-2, diag_y-1, pedge_diag_br_pos + diag_offset + 0);
+        if (current_subindex == 10 || current_subindex == 11) {
+            write_to_tile(current_map, diag_x-2, diag_y-1, pedge_diag_br_pos + diag_offset + 0);
         }
-        write_to_tile(map, diag_x-1, diag_y-1, pedge_diag_br_pos + diag_offset + 1);
-        write_to_tile(map, diag_x, diag_y-1, pedge_diag_br_pos + diag_offset + 2);
-        write_to_tile(map, diag_x-2, diag_y, pedge_diag_br_pos + diag_offset + 3);
-        write_to_tile(map, diag_x-1, diag_y, pedge_diag_br_pos + diag_offset + 4);
-        write_to_tile(map, diag_x, diag_y, pedge_diag_br_pos + diag_offset + 5);
+        write_to_tile(current_map, diag_x-1, diag_y-1, pedge_diag_br_pos + diag_offset + 1);
+        write_to_tile(current_map, diag_x, diag_y-1, pedge_diag_br_pos + diag_offset + 2);
+        write_to_tile(current_map, diag_x-2, diag_y, pedge_diag_br_pos + diag_offset + 3);
+        write_to_tile(current_map, diag_x-1, diag_y, pedge_diag_br_pos + diag_offset + 4);
+        write_to_tile(current_map, diag_x, diag_y, pedge_diag_br_pos + diag_offset + 5);
     }
 
     //#
@@ -179,19 +174,19 @@ static void draw_br(register u8* map, register struct pattern_data* pattern, uns
 
         // Adjust starting position and tile
         // to fit the diagonal section
-        if (subindex <= 3) {
+        if (current_subindex <= 3) {
             mid_start_x -= 3;
             mid_start_y += 0;
             tile_index = 0;
-        } else if (subindex <= 7) {
+        } else if (current_subindex <= 7) {
             mid_start_x -= 4;
             mid_start_y += 1;
             tile_index = 4;
-        } else if (subindex <= 9) {
+        } else if (current_subindex <= 9) {
             mid_start_x -= 3;
             mid_start_y += 1;
             tile_index = 3;
-        } else if (subindex <= 11) {
+        } else if (current_subindex <= 11) {
             mid_start_x -= 3;
             mid_start_y += 1;
             tile_index = 1;
@@ -205,7 +200,7 @@ static void draw_br(register u8* map, register struct pattern_data* pattern, uns
             // Do the first row
             for (int dx = 0; dx <= tile_index; dx++) {
                 if (mid_start_x + dx >= 16)
-                    write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_br_pos + dx);
+                    write_to_tile(current_map, mid_start_x + dx, mid_start_y, pedge_mid_br_pos + dx);
             }
 
             while (mid_start_x >= 14) {
@@ -214,7 +209,7 @@ static void draw_br(register u8* map, register struct pattern_data* pattern, uns
 
                 for (int dx = 0; dx <= 4; dx++) {
                     if (mid_start_x + dx >= 16)
-                        write_to_tile(map, mid_start_x  + dx, mid_start_y, pedge_mid_br_pos + dx);
+                        write_to_tile(current_map, mid_start_x  + dx, mid_start_y, pedge_mid_br_pos + dx);
                 }   
             }
         }
@@ -223,9 +218,8 @@ static void draw_br(register u8* map, register struct pattern_data* pattern, uns
     //#
 }
 
-static void draw_bl(register u8* map, register struct pattern_data* pattern, unsigned int diag_offset) {
+static void draw_bl(register struct pattern_data* pattern, unsigned int diag_offset) {
     unsigned int index = pattern->index;
-    unsigned int subindex = pattern->subindex;
 
     unsigned int current_x = 14 - (index*2);
     unsigned int current_y = 17 + index;
@@ -235,9 +229,9 @@ static void draw_bl(register u8* map, register struct pattern_data* pattern, uns
     unsigned int diag_y = current_y;
 
     // Correct offsets
-    if (subindex <= 7) {
+    if (current_subindex <= 7) {
         
-    } else if (subindex <= 9) {
+    } else if (current_subindex <= 9) {
         diag_x-=1;
     } else {
         diag_x-=1;
@@ -245,17 +239,17 @@ static void draw_bl(register u8* map, register struct pattern_data* pattern, uns
     }
 
     if (!KEY_HELD(A)) {
-        write_to_tile(map, diag_x, diag_y-1, pedge_diag_bl_pos + diag_offset + 0);
-        write_to_tile(map, diag_x+1, diag_y-1, pedge_diag_bl_pos + diag_offset + 1);
+        write_to_tile(current_map, diag_x, diag_y-1, pedge_diag_bl_pos + diag_offset + 0);
+        write_to_tile(current_map, diag_x+1, diag_y-1, pedge_diag_bl_pos + diag_offset + 1);
 
         // Tile 2 only needs to be loaded 8-16, and if it is loaded earlier it clips into the center hexagon
-        if (subindex >= 8) {
-            write_to_tile(map, diag_x+2, diag_y-1, pedge_diag_bl_pos + diag_offset + 2);
+        if (current_subindex == 10 || current_subindex == 11) {
+            write_to_tile(current_map, diag_x+2, diag_y-1, pedge_diag_bl_pos + diag_offset + 2);
         }
 
-        write_to_tile(map, diag_x, diag_y, pedge_diag_bl_pos + diag_offset + 3);
-        write_to_tile(map, diag_x+1, diag_y, pedge_diag_bl_pos + diag_offset + 4);
-        write_to_tile(map, diag_x+2, diag_y, pedge_diag_bl_pos + diag_offset + 5);
+        write_to_tile(current_map, diag_x, diag_y, pedge_diag_bl_pos + diag_offset + 3);
+        write_to_tile(current_map, diag_x+1, diag_y, pedge_diag_bl_pos + diag_offset + 4);
+        write_to_tile(current_map, diag_x+2, diag_y, pedge_diag_bl_pos + diag_offset + 5);
     }
 
     //#
@@ -271,19 +265,19 @@ static void draw_bl(register u8* map, register struct pattern_data* pattern, uns
 
         // Adjust starting position and tile
         // to fit the diagonal section
-        if (subindex <= 3) {
+        if (current_subindex <= 3) {
             mid_start_x -= 1;
             mid_start_y += 0;
             tile_index = 4;
-        } else if (subindex <= 7) {
+        } else if (current_subindex <= 7) {
             mid_start_x += 0;
             mid_start_y += 1;
             tile_index = 1;
-        } else if (subindex <= 9) {
+        } else if (current_subindex <= 9) {
             mid_start_x -= 1;
             mid_start_y += 1;
             tile_index = 1;
-        } else if (subindex <= 11) {
+        } else if (current_subindex <= 11) {
             mid_start_x -= 1;
             mid_start_y += 1;
             tile_index = 3;
@@ -297,7 +291,7 @@ static void draw_bl(register u8* map, register struct pattern_data* pattern, uns
             // Do the first row
             for (int dx = tile_index; dx <= 4; dx++) {
                 if (mid_start_x + dx <= 15)
-                    write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_bl_pos + dx);
+                    write_to_tile(current_map, mid_start_x + dx, mid_start_y, pedge_mid_bl_pos + dx);
             }
 
             while (mid_start_x <= 15) {
@@ -306,7 +300,7 @@ static void draw_bl(register u8* map, register struct pattern_data* pattern, uns
 
                 for (int dx = 0; dx <= 4; dx++) {
                     if (mid_start_x + dx <= 15)
-                        write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_bl_pos + dx);
+                        write_to_tile(current_map, mid_start_x + dx, mid_start_y, pedge_mid_bl_pos + dx);
                 }   
             }
         }
@@ -315,9 +309,8 @@ static void draw_bl(register u8* map, register struct pattern_data* pattern, uns
     //#
 }
 
-static void draw_ul(register u8* map, register struct pattern_data* pattern, unsigned int diag_offset) {
+static void draw_ul(register struct pattern_data* pattern, unsigned int diag_offset) {
     unsigned int index = pattern->index;
-    unsigned int subindex = pattern->subindex;
 
     unsigned int current_x = 14 - (index*2);
     unsigned int current_y = 15 - index;
@@ -326,9 +319,9 @@ static void draw_ul(register u8* map, register struct pattern_data* pattern, uns
     unsigned int diag_x = current_x;
     unsigned int diag_y = current_y;    
 
-    if (subindex <= 7) {
+    if (current_subindex <= 7) {
 
-    } else if (subindex <= 9) {
+    } else if (current_subindex <= 9) {
         diag_x -= 1;
     } else {
         diag_x -= 1;
@@ -337,14 +330,16 @@ static void draw_ul(register u8* map, register struct pattern_data* pattern, uns
     
 
     if (!KEY_HELD(A)) {
-        write_to_tile(map, diag_x, diag_y, pedge_diag_ul_pos + diag_offset + 0);
-        write_to_tile(map, diag_x+1, diag_y, pedge_diag_ul_pos + diag_offset + 1);
-        write_to_tile(map, diag_x+2, diag_y, pedge_diag_ul_pos + diag_offset + 2);
-        write_to_tile(map, diag_x, diag_y+1, pedge_diag_ul_pos + diag_offset + 3);
-        write_to_tile(map, diag_x+1, diag_y+1, pedge_diag_ul_pos + diag_offset + 4);
+        write_to_tile(current_map, diag_x, diag_y, pedge_diag_ul_pos + diag_offset + 0);
+        write_to_tile(current_map, diag_x+1, diag_y, pedge_diag_ul_pos + diag_offset + 1);
+        write_to_tile(current_map, diag_x+2, diag_y, pedge_diag_ul_pos + diag_offset + 2);
 
-        if (subindex >= 8)
-            write_to_tile(map, diag_x+2, diag_y+1, pedge_diag_ul_pos + diag_offset + 5);
+        write_to_tile(current_map, diag_x, diag_y+1, pedge_diag_ul_pos + diag_offset + 3);
+
+        write_to_tile(current_map, diag_x+1, diag_y+1, pedge_diag_ul_pos + diag_offset + 4);
+
+        if (current_subindex == 10 || current_subindex == 11)
+            write_to_tile(current_map, diag_x+2, diag_y+1, pedge_diag_ul_pos + diag_offset + 5);
     }
 
     //#
@@ -358,19 +353,19 @@ static void draw_ul(register u8* map, register struct pattern_data* pattern, uns
         int mid_start_y = current_y;
         int tile_index;
 
-        if (subindex <= 3) {
+        if (current_subindex <= 3) {
             mid_start_x -= 1;
             mid_start_y -= 0;
             tile_index = 4;
-        } else if (subindex <= 7) {
+        } else if (current_subindex <= 7) {
             mid_start_x -= 0;
             mid_start_y -= 1;
             tile_index = 0;
-        } else if (subindex <= 9) {
+        } else if (current_subindex <= 9) {
             mid_start_x -= 1;
             mid_start_y -= 1;
             tile_index = 1;
-        } else if (subindex <= 11) {
+        } else if (current_subindex <= 11) {
             mid_start_x -= 1;
             mid_start_y -= 1;
             tile_index = 3;
@@ -384,7 +379,7 @@ static void draw_ul(register u8* map, register struct pattern_data* pattern, uns
             // Do the first row
             for (int dx = tile_index; dx <= 4; dx++) {
                 if (mid_start_x + dx <= 15)
-                    write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_ul_pos + dx);
+                    write_to_tile(current_map, mid_start_x + dx, mid_start_y, pedge_mid_ul_pos + dx);
             }
 
             while (mid_start_x <= 15) {
@@ -393,7 +388,7 @@ static void draw_ul(register u8* map, register struct pattern_data* pattern, uns
 
                 for (int dx = 0; dx <= 4; dx++) {
                     if (mid_start_x + dx <= 15)
-                        write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_ul_pos + dx);
+                        write_to_tile(current_map, mid_start_x + dx, mid_start_y, pedge_mid_ul_pos + dx);
                 }
 
             }
@@ -402,9 +397,8 @@ static void draw_ul(register u8* map, register struct pattern_data* pattern, uns
     //#
 }
 
-static void draw_ur(register u8* map, register struct pattern_data* pattern, unsigned int diag_offset) {
+static void draw_ur(register struct pattern_data* pattern, unsigned int diag_offset) {
     unsigned int index = pattern->index;
-    unsigned int subindex = pattern->subindex;
 
     unsigned int current_x = 17 + (2 * index);
     unsigned int current_y = 15 - index;
@@ -413,9 +407,9 @@ static void draw_ur(register u8* map, register struct pattern_data* pattern, uns
     unsigned int diag_x = current_x;
     unsigned int diag_y = current_y;
 
-    if (subindex <= 7) {
+    if (current_subindex <= 7) {
 
-    } else if (subindex <= 9) {
+    } else if (current_subindex <= 9) {
         diag_x += 1;
     } else {
         diag_x += 1;
@@ -423,15 +417,15 @@ static void draw_ur(register u8* map, register struct pattern_data* pattern, uns
     }
 
     if (!KEY_HELD(A)) {
-        write_to_tile(map, diag_x-2, diag_y, pedge_diag_ur_pos + diag_offset + 0);
-        write_to_tile(map, diag_x-1, diag_y, pedge_diag_ur_pos + diag_offset + 1);
-        write_to_tile(map, diag_x, diag_y, pedge_diag_ur_pos + diag_offset + 2);
+        write_to_tile(current_map, diag_x-2, diag_y, pedge_diag_ur_pos + diag_offset + 0);
+        write_to_tile(current_map, diag_x-1, diag_y, pedge_diag_ur_pos + diag_offset + 1);
+        write_to_tile(current_map, diag_x, diag_y, pedge_diag_ur_pos + diag_offset + 2);
 
-        if (subindex >= 8)
-            write_to_tile(map, diag_x-2, diag_y+1, pedge_diag_ur_pos + diag_offset + 3);
+        if (current_subindex == 10 || current_subindex == 11)
+            write_to_tile(current_map, diag_x-2, diag_y+1, pedge_diag_ur_pos + diag_offset + 3);
 
-        write_to_tile(map, diag_x-1, diag_y+1, pedge_diag_ur_pos + diag_offset + 4);
-        write_to_tile(map, diag_x, diag_y+1, pedge_diag_ur_pos + diag_offset + 5);
+        write_to_tile(current_map, diag_x-1, diag_y+1, pedge_diag_ur_pos + diag_offset + 4);
+        write_to_tile(current_map, diag_x, diag_y+1, pedge_diag_ur_pos + diag_offset + 5);
     }
 
     //#
@@ -446,19 +440,19 @@ static void draw_ur(register u8* map, register struct pattern_data* pattern, uns
 
         // Adjust starting position and tile
         // to fit the diagonal section
-        if (subindex <= 3) {
+        if (current_subindex <= 3) {
             mid_start_x -= 3;
             mid_start_y -= 0;
             tile_index = 0;
-        } else if (subindex <= 7) {
+        } else if (current_subindex <= 7) {
             mid_start_x -= 4;
             mid_start_y -= 1;
             tile_index = 4;
-        } else if (subindex <= 9) {
+        } else if (current_subindex <= 9) {
             mid_start_x -= 3;
             mid_start_y -= 1;
             tile_index = 3;
-        } else if (subindex <= 11) {
+        } else if (current_subindex <= 11) {
             mid_start_x -= 3;
             mid_start_y -= 1;
             tile_index = 1;
@@ -472,7 +466,7 @@ static void draw_ur(register u8* map, register struct pattern_data* pattern, uns
             // Do the first row
             for (int dx = 0; dx <= tile_index; dx++) {
                 if (mid_start_x + dx >= 16)
-                    write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_ur_pos + dx);
+                    write_to_tile(current_map, mid_start_x + dx, mid_start_y, pedge_mid_ur_pos + dx);
             }
 
             while (mid_start_x >= 14) {
@@ -481,7 +475,7 @@ static void draw_ur(register u8* map, register struct pattern_data* pattern, uns
 
                 for (int dx = 0; dx <= 4; dx++) {
                     if (mid_start_x + dx >= 16)
-                        write_to_tile(map, mid_start_x + dx, mid_start_y, pedge_mid_ur_pos + dx);
+                        write_to_tile(current_map, mid_start_x + dx, mid_start_y, pedge_mid_ur_pos + dx);
                 }   
             }
         }
@@ -491,15 +485,20 @@ static void draw_ur(register u8* map, register struct pattern_data* pattern, uns
     //#
 }
 
-void draw_pattern(struct pattern_data* pattern) {
+void pattern_draw_start(unsigned int subindex) {
 
-    if (pattern->index > 8) {
-        pattern->index = 8;
-    }
+    // Load the base tiles
+    CpuFastSet(hexagon_reduced_img_bin, VRAM_BASE, COPY32 | 400);
 
-    int diag_subindex = pattern->subindex; // Diagonal is 16 frames
-    int mid_subindex = pattern->subindex & 3; // Mid is 4 frames
-    int vert_subindex = pattern->subindex & 7; // Vert is 8 frames
+    // Initialise the WRAM map
+    // I can't mess about with VRAM directly too well, poking with unaligned data there straight up doesn't work.
+    // Instead I'm making a buffer in WRAM to mess about with, copying it whole into VRAM once I'm done.
+    CpuFastSet(hexagon_map_bin, current_map, COPY32 | 256);
+    current_subindex = subindex;
+
+    int diag_subindex = subindex; // Diagonal is 16 frames
+    int mid_subindex = subindex & 3; // Mid is 4 frames
+    int vert_subindex = subindex & 7; // Vert is 8 frames
 
     //# Load current tiles
     CpuFastSet( // Mid BR
@@ -562,51 +561,49 @@ void draw_pattern(struct pattern_data* pattern) {
         COPY32 | 16 * 18
     );
     //#
+}
 
-    // Initialise the WRAM map
-    // I can't mess about with VRAM directly too well, poking with unaligned data there straight up doesn't work.
-    // Instead I'm making a buffer in WRAM to mess about with, copying it whole into VRAM once I'm done.
-    u8 current_map[1024];
-    CpuFastSet(hexagon_map_bin, current_map, COPY32 | 256);
+void pattern_draw_finish() {
+    // Copy the WRAM map into VRAM
+    CpuFastSet(current_map, base_map, COPY32 | 256);
+}
+
+void pattern_draw(struct pattern_data* pattern) {
 
     if (pattern->a && pattern->b) {
-        draw_ur(current_map, pattern, 12);
+        draw_ur(pattern, 12);
     } else if (pattern->a) {
-        draw_ur(current_map, pattern, 6);
+        draw_ur(pattern, 6);
     } else if (pattern->b) {
-        draw_ur(current_map, pattern, 0);
+        draw_ur(pattern, 0);
     }
 
     if (pattern->b && pattern->c) {
-        draw_br(current_map, pattern, 12);
+        draw_br(pattern, 12);
     } else if (pattern->b) {
-        draw_br(current_map, pattern, 0);
+        draw_br(pattern, 0);
     } else if (pattern->c) {
-        draw_br(current_map, pattern, 6);
+        draw_br(pattern, 6);
     }
 
     if (pattern->d && pattern->e) {
-        draw_bl(current_map, pattern, 12);
+        draw_bl(pattern, 12);
     } else if (pattern->d) {
-        draw_bl(current_map, pattern, 6);
+        draw_bl(pattern, 6);
     } else if (pattern->e) {
-        draw_bl(current_map, pattern, 0);
+        draw_bl(pattern, 0);
     }
 
     if (pattern->e && pattern->f) {
-        draw_ul(current_map, pattern, 12);
+        draw_ul(pattern, 12);
     } else if (pattern->e) {
-        draw_ul(current_map, pattern, 0);
+        draw_ul(pattern, 0);
     } else if (pattern->f) {
-        draw_ul(current_map, pattern, 6);
+        draw_ul(pattern, 6);
     }
 
     if (pattern->b)
-        draw_rm(current_map, pattern);
+        draw_rm(pattern);
     if (pattern->e)
-        draw_lm(current_map, pattern);
-
-    // == FINISH == 
-    // Copy the WRAM map into VRAM
-    CpuFastSet(current_map, base_map, COPY32 | 256);
+        draw_lm(pattern);
 }

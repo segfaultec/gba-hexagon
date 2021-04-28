@@ -4,7 +4,6 @@
 
 struct pattern_data {
     unsigned int index : 4;
-    unsigned int subindex : 4;
     bool a : 1;
     bool b : 1;
     bool c : 1;
@@ -13,6 +12,8 @@ struct pattern_data {
     bool f : 1;
 };
 
-void patterns_init();
+void pattern_draw_start();
 
-void draw_pattern(struct pattern_data* pattern);
+void pattern_draw_finish();
+
+void pattern_draw(struct pattern_data* pattern);

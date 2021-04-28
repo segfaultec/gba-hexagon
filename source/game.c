@@ -58,8 +58,6 @@ void game_init() {
 	x = 32840;
 	y = 33800;
 
-	patterns_init();
-
 	numdisplay_init(1, 30, 1);
 
 	player_data_init();
@@ -68,15 +66,43 @@ void game_init() {
 
 static fixed32 angle = 0;
 
+unsigned int pattern_subindex = 11;
+
+struct pattern_data pattern = {
+	.index = 2,
+	.a = true, .b = true, .c = true, .d = true, .e = true, .f = true
+};
+
+struct pattern_data other_pattern = {
+	.index = 3,
+	.a = true, .b = true, .c = true, .d = true, .e = true, .f = true
+};
+
 void game_update() { 
 
-	struct pattern_data pattern = {
-		.index = 2,
-		.subindex = 5,
-		.a = true, .b = true, .c = true, .e = true
-	};
+	if (KEY_DOWN(Up)) {
+		if (pattern_subindex == 15) {
+			pattern_subindex = 0;
+		} else {
+			pattern_subindex++;
+		}
+	}
+	if (KEY_DOWN(Down)) {
+		if (pattern_subindex == 0) {
+			pattern_subindex = 15;
+		} else {
+			pattern_subindex--;
+		}
+	}
 
-	draw_pattern(&pattern);
+	numdisplay_update(0, pattern_subindex);
+
+	pattern_draw_start(pattern_subindex);
+	if (!KEY_HELD(L))
+		pattern_draw(&pattern);
+	if (!KEY_HELD(R))
+		pattern_draw(&other_pattern);
+	pattern_draw_finish();
 
 	struct calc_bg_rot_param bgparam ={
 		.ptr = BGAFFINE2,
