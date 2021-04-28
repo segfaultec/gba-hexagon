@@ -8,7 +8,8 @@
 #include "pedge_mid_bl_img_bin.h"
 #include "pedge_mid_ul_img_bin.h"
 #include "pedge_mid_ur_img_bin.h"
-#include "pedge_vert_img_bin.h"
+#include "pedge_vert_r_img_bin.h"
+#include "pedge_vert_l_img_bin.h"
 
 #include "pedge_diag_br_img_bin.h"
 #include "pedge_diag_bl_img_bin.h"
@@ -48,27 +49,6 @@ INLINE void write_to_tile(u8* map, u8 x, u8 y, u8 value) {
     u32 index = index_from_tile(x, y);
     map[index] = value;
 }
-
-struct diagcalc {
-    unsigned int x;
-    unsigned int y;
-    unsigned int counter;
-};
-
- // 0 -> change in x
- // 1 -> change in x
- // 2 -> change in y
-
-// Set counter to 2 for there to be a Y change right away
-INLINE void CalcDiag(struct diagcalc* data, const int dirX, const int dirY) {
-    unsigned int count = ++data->counter;
-    if (count == 1 || count == 2) {
-        data->x += dirX;
-    } else {
-        data->counter = 0;
-        data->y += dirY;
-    }
-}
 //#
 
 // section 18 * 4 = 72
@@ -97,19 +77,11 @@ static int index = 3;
 static int subindex = 0;
 
 static void draw_rm(u8* map) {
+    unsigned int current_x = 17 + (index*2);
+    unsigned int current_y = 17 + index;
 
-    struct diagcalc current = {
-        17, 17, 1
-    };
-
-    // Find the starting position (could be pulled out)
-    for (unsigned int i=0; i<index*3; i++) {
-        CalcDiag(&current, 1, 1);
-    }
-
-    // == R VERT LINE == 
-    int vert_start_x = current.x;
-    int vert_start_y = current.y;
+    int vert_start_x = current_x;
+    int vert_start_y = current_y;
     if (subindex <= 5) {
         vert_start_x -= 1;
         vert_start_y -= 2;
@@ -121,29 +93,55 @@ static void draw_rm(u8* map) {
     }
 
     if (!KEY_HELD(B)) {
-        // One line
-        write_to_tile(map, vert_start_x, vert_start_y, pedge_vert_r_pos + 0);
-        write_to_tile(map, vert_start_x+1, vert_start_y, pedge_vert_r_pos + 1);
+        int line_amount = index*2 - 1;
+        if (subindex >= 6) line_amount += 2;
 
-        // Another line
-        write_to_tile(map, vert_start_x, vert_start_y-1, pedge_vert_r_pos + 0);
-        write_to_tile(map, vert_start_x+1, vert_start_y-1, pedge_vert_r_pos + 1);
+        for (int i=0; i<line_amount; i++) {
+            write_to_tile(map, vert_start_x, vert_start_y-i, pedge_vert_r_pos + 0);
+            write_to_tile(map, vert_start_x+1, vert_start_y-i, pedge_vert_r_pos + 1);
+        }
+    }
+}
+
+static void draw_lm(u8* map) {
+    unsigned int current_x = 14 - (index*2);
+    unsigned int current_y = 17 + index;
+
+    int vert_start_x = current_x;
+    int vert_start_y = current_y;
+    if (subindex <= 5) {
+        vert_start_x -= 0;
+        vert_start_y -= 2;
+    } else if (subindex <= 9) {
+        vert_start_x -= 1;
+        vert_start_y -= 2;
+    } else if (subindex <= 13) {
+        vert_start_x -= 1;
+        vert_start_y -= 1;
+    } else {
+        vert_start_x -= 2;
+        vert_start_y -= 1;
+    }
+
+    if (!KEY_HELD(B)) {
+        int line_amount = index*2 - 1;
+        if (subindex >= 10) line_amount += 2;
+
+        for (int i=0; i<line_amount; i++) {
+            write_to_tile(map, vert_start_x, vert_start_y-i, pedge_vert_l_pos + 0);
+            write_to_tile(map, vert_start_x+1, vert_start_y-i, pedge_vert_l_pos + 1);
+        }
     }
 }
 
 static void draw_br(u8* map) {
-    struct diagcalc current = {
-        17, 17, 1
-    };
+    unsigned int current_x = 17 + (index*2);
+    unsigned int current_y = 17 + index;
 
-    // Find the starting position
-    for (unsigned int i=0; i<index*3; i++) {
-        CalcDiag(&current, 1, 1);
-    }
 
     //# == BR BORDER ==
-    unsigned int diag_x = current.x;
-    unsigned int diag_y = current.y;
+    unsigned int diag_x = current_x;
+    unsigned int diag_y = current_y;
 
     unsigned int diag_offset = 12; // Both L and R
 
@@ -172,8 +170,8 @@ static void draw_br(u8* map) {
     //#
     
     //# == BR MID LINE == 
-    int mid_start_x = current.x;
-    int mid_start_y = current.y;
+    int mid_start_x = current_x;
+    int mid_start_y = current_y;
     int tile_index;
 
     // Adjust starting position and tile
@@ -222,17 +220,12 @@ static void draw_br(u8* map) {
 }
 
 static void draw_bl(u8* map) {
-    struct diagcalc current = {
-        14, 17, 1
-    };
-
-    for (unsigned int i=0; i<index*3; i++) {
-        CalcDiag(&current, -1, 1);
-    }
+    unsigned int current_x = 14 - (index*2);
+    unsigned int current_y = 17 + index;
 
     //# == BL BORDER ==
-    unsigned int diag_x = current.x;
-    unsigned int diag_y = current.y;
+    unsigned int diag_x = current_x;
+    unsigned int diag_y = current_y;
 
     unsigned int diag_offset = 12; // Both L and R
 
@@ -263,8 +256,8 @@ static void draw_bl(u8* map) {
     //#
 
     //# == BL MID LINE == 
-    int mid_start_x = current.x;
-    int mid_start_y = current.y;
+    int mid_start_x = current_x;
+    int mid_start_y = current_y;
     int tile_index;
 
     // Adjust starting position and tile
@@ -313,17 +306,12 @@ static void draw_bl(u8* map) {
 }
 
 static void draw_ul(u8* map) {
-    struct diagcalc current = {
-        14, 15, 1
-    };
-
-    for (unsigned int i=0; i<index*3; i++) {
-        CalcDiag(&current, -1, -1);
-    }
+    unsigned int current_x = 14 - (index*2);
+    unsigned int current_y = 15 - index;
 
     //# == UL BORDER ==
-    unsigned int diag_x = current.x;
-    unsigned int diag_y = current.y;    
+    unsigned int diag_x = current_x;
+    unsigned int diag_y = current_y;    
 
     unsigned int diag_offset = 12; // both L and R
 
@@ -352,8 +340,8 @@ static void draw_ul(u8* map) {
 
     //# == UL MID LINE ==
 
-    int mid_start_x = current.x;
-    int mid_start_y = current.y;
+    int mid_start_x = current_x;
+    int mid_start_y = current_y;
     int tile_index;
 
     if (subindex <= 3) {
@@ -401,17 +389,13 @@ static void draw_ul(u8* map) {
 }
 
 static void draw_ur(u8* map) {
-    struct diagcalc current = {
-        17, 15, 1
-    };
 
-    for (unsigned int i=0; i<index*3; i++) {
-        CalcDiag(&current, 1, -1);
-    }
+    unsigned int current_x = 17 + (2 * index);
+    unsigned int current_y = 15 - index;
 
     //# == UR BORDER ==
-    unsigned int diag_x = current.x;
-    unsigned int diag_y = current.y;
+    unsigned int diag_x = current_x;
+    unsigned int diag_y = current_y;
 
     unsigned int diag_offset = 12; // Both L and R
 
@@ -439,8 +423,8 @@ static void draw_ur(u8* map) {
     //#
 
     //# == UR MID LINE ==
-    int mid_start_x = current.x;
-    int mid_start_y = current.y;
+    int mid_start_x = current_x;
+    int mid_start_y = current_y;
     int tile_index;
 
     // Adjust starting position and tile
@@ -492,7 +476,7 @@ void patterns_update() {
 
     if (KEY_DOWN(Up)) subindex--;
     if (KEY_DOWN(Down)) subindex++;
-    //subindex++;
+    //subindex--;
 
     if (subindex < subindex_min) {
         subindex = subindex_max;
@@ -554,9 +538,15 @@ void patterns_update() {
         COPY32 | 16 * 18
     );
 
-    CpuFastSet( // Vert
-        pedge_vert_img_bin + (vert_subindex * 64 * 2),
+    CpuFastSet( // Vert R
+        pedge_vert_r_img_bin + (vert_subindex * 64 * 2),
         TileToPtr(pedge_vert_r_pos),
+        COPY32 | 16 * 2
+    );
+
+    CpuFastSet( // Vert L
+        pedge_vert_l_img_bin + (vert_subindex * 64 * 2),
+        TileToPtr(pedge_vert_l_pos),
         COPY32 | 16 * 2
     );
 
@@ -574,9 +564,11 @@ void patterns_update() {
 
     draw_br(current_map);
     draw_bl(current_map);
-    //draw_rm(current_map);
     draw_ul(current_map);
     draw_ur(current_map);
+
+    draw_lm(current_map);
+    draw_rm(current_map);
 
     // == FINISH == 
     // Copy the WRAM map into VRAM
