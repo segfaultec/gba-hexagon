@@ -54,15 +54,13 @@ static const u32 pedge_diag_ul_pos = 61; // size 6 * 3 = 18
 static const u32 pedge_diag_ur_pos = 79; // size 6 * 3 = 18
 
 // section 5 * 4 = 20
-static const u32 pedge_mid_br_pos = 97; // size 5
+static const u32 pedge_mid_br_pos = 97;  // size 5
 static const u32 pedge_mid_bl_pos = 102; // size 5
 static const u32 pedge_mid_ul_pos = 107; // size 5
 static const u32 pedge_mid_ur_pos = 112; // size 5
 
 static const u32 pedge_vert_r_pos = 117; // size 2
 static const u32 pedge_vert_l_pos = 119; // size 2
-
-const int debug_tile = 3;
 
 static u8 current_subindex;
 static u8 current_map[1024];
@@ -569,6 +567,8 @@ void pattern_draw_finish() {
 }
 
 void pattern_draw(struct pattern_data* pattern) {
+
+    if (!pattern->active) return;
 
     if (pattern->a && pattern->b) {
         draw_ur(pattern, 12);

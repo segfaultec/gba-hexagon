@@ -4,6 +4,7 @@
 
 struct pattern_data {
     unsigned int index : 4;
+    bool active : 1;
     bool a : 1;
     bool b : 1;
     bool c : 1;

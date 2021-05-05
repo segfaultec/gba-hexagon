@@ -16,10 +16,18 @@
 #include "player.h"
 #include "patterns.h"
 
-const u32 player_count = 32;
-fixed32 x; fixed32 y;
+static fixed32 angle = 0;
+static unsigned int pattern_subindex = 0;
+
+struct pattern_data pattern = {
+	.index = 1, .active = true,
+	.a = true, .b = true, .c = true, .d = true, .e = true, .f = true
+};
+
+struct pattern_data current_patterns[8];
 
 void game_init() {
+	//# BG Init
 	*DISCNT = dispcnt_zero;
 	DISCNT->bg_mode = 1;
 	DISCNT->bg0_on = true;
@@ -47,16 +55,16 @@ void game_init() {
 	for (int i=0; i<(sizeof(main_pal)/sizeof(Color)); i++) {
 		BG_PALETTE[i] = main_pal[i];
 	}
+	//#
 
+	//# OAM init
 	// Clear OAM
 	const struct oam_regular empty_sprite = {
 		.disabled = true
 	};
 	WriteToOAM(&empty_sprite, 0);
 	CpuFastSet(OAM, OAM, FILL | COPY32 | 256);
-
-	x = 32840;
-	y = 33800;
+	//#
 
 	numdisplay_init(1, 30, 1);
 
@@ -64,50 +72,24 @@ void game_init() {
 	player_init(0);
 }
 
-static fixed32 angle = 0;
-
-unsigned int pattern_subindex = 11;
-
-struct pattern_data pattern = {
-	.index = 2,
-	.a = true, .b = true, .c = true, .d = true, .e = true, .f = true
-};
-
-struct pattern_data other_pattern = {
-	.index = 3,
-	.a = true, .b = true, .c = true, .d = true, .e = true, .f = true
-};
-
 void game_update() { 
 
-	if (KEY_DOWN(Up)) {
-		if (pattern_subindex == 15) {
-			pattern_subindex = 0;
-		} else {
-			pattern_subindex++;
-		}
-	}
-	if (KEY_DOWN(Down)) {
-		if (pattern_subindex == 0) {
-			pattern_subindex = 15;
-		} else {
-			pattern_subindex--;
-		}
-	}
+	current_patterns[0] = pattern;
 
 	numdisplay_update(0, pattern_subindex);
 
 	pattern_draw_start(pattern_subindex);
-	if (!KEY_HELD(L))
-		pattern_draw(&pattern);
-	if (!KEY_HELD(R))
-		pattern_draw(&other_pattern);
+
+	for (int i=0; i<8; i++) {
+		pattern_draw(&current_patterns[i]);
+	}
+
 	pattern_draw_finish();
 
 	struct calc_bg_rot_param bgparam ={
 		.ptr = BGAFFINE2,
-		.dx = x,
-		.dy = y,
+		.dx = 32840,
+		.dy = 33800,
 		.angle = angle,
 
 		// as close as the camera can get
