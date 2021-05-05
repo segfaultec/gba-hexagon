@@ -17,14 +17,10 @@
 #include "patterns.h"
 
 static fixed32 angle = 0;
+static unsigned int pattern_index = 1;
 static unsigned int pattern_subindex = 0;
 
-struct pattern_data pattern = {
-	.index = 1, .active = true,
-	.a = true, .b = true, .c = true, .d = true, .e = true, .f = true
-};
-
-struct pattern_data current_patterns[8];
+u8 pattern_table[8];
 
 void game_init() {
 	//# BG Init
@@ -74,14 +70,32 @@ void game_init() {
 
 void game_update() { 
 
-	current_patterns[0] = pattern;
+	if (KEY_DOWN(Up)) {
+		if (pattern_subindex == 0) {
+			pattern_subindex = 15;
+			pattern_index--;
+		} else {
+			pattern_subindex--;
+		}
+	}
+	if (KEY_DOWN(Down)) {
+		if (pattern_subindex == 15) {
+			pattern_subindex = 0;
+			pattern_index++;
+		} else {
+			pattern_subindex++;
+		}
+	}
+
+	pattern_table[0] = 42;
+	pattern_table[1] = 21;
 
 	numdisplay_update(0, pattern_subindex);
 
-	pattern_draw_start(pattern_subindex);
+	pattern_draw_start(pattern_subindex, pattern_table[0]);
 
 	for (int i=0; i<8; i++) {
-		pattern_draw(&current_patterns[i]);
+		pattern_draw(i, pattern_table[i]);
 	}
 
 	pattern_draw_finish();

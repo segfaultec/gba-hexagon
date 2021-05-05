@@ -16,6 +16,9 @@
 #include "pedge_diag_ul_img_bin.h"
 #include "pedge_diag_ur_img_bin.h"
 
+#include "hexagon_center_img_bin.h"
+#include "hexagon_center_gen_img_bin.h"
+
 #include "lcd_impl.h"
 #include "input.h"
 #include "numdisplay.h"
@@ -62,14 +65,14 @@ static const u32 pedge_mid_ur_pos = 112; // size 5
 static const u32 pedge_vert_r_pos = 117; // size 2
 static const u32 pedge_vert_l_pos = 119; // size 2
 
+static const u32 hexagon_center_pos = 121; // size 12
+
 static u8 current_subindex;
 static u8 current_map[1024];
 
 #define DRAW_MID_CHECK diag_offset != 0
 
-static void draw_rm(register struct pattern_data* pattern) {
-    unsigned int index = pattern->index;
-
+static void draw_rm(register unsigned int index) {
     unsigned int current_x = 17 + (index*2);
     unsigned int current_y = 17 + index;
 
@@ -96,9 +99,7 @@ static void draw_rm(register struct pattern_data* pattern) {
     }
 }
 
-static void draw_lm(register struct pattern_data* pattern) {
-    unsigned int index = pattern->index;
-
+static void draw_lm(register unsigned int index) {
     unsigned int current_x = 14 - (index*2);
     unsigned int current_y = 17 + index;
 
@@ -129,9 +130,7 @@ static void draw_lm(register struct pattern_data* pattern) {
     }
 }
 
-static void draw_br(register struct pattern_data* pattern, unsigned int diag_offset) {
-    unsigned int index = pattern->index;
-
+static void draw_br(register unsigned int index, unsigned int diag_offset) {
     unsigned int current_x = 17 + (index*2);
     unsigned int current_y = 17 + index;
 
@@ -216,9 +215,7 @@ static void draw_br(register struct pattern_data* pattern, unsigned int diag_off
     //#
 }
 
-static void draw_bl(register struct pattern_data* pattern, unsigned int diag_offset) {
-    unsigned int index = pattern->index;
-
+static void draw_bl(register unsigned int index, unsigned int diag_offset) {
     unsigned int current_x = 14 - (index*2);
     unsigned int current_y = 17 + index;
 
@@ -307,9 +304,7 @@ static void draw_bl(register struct pattern_data* pattern, unsigned int diag_off
     //#
 }
 
-static void draw_ul(register struct pattern_data* pattern, unsigned int diag_offset) {
-    unsigned int index = pattern->index;
-
+static void draw_ul(register unsigned int index, unsigned int diag_offset) {
     unsigned int current_x = 14 - (index*2);
     unsigned int current_y = 15 - index;
 
@@ -395,9 +390,7 @@ static void draw_ul(register struct pattern_data* pattern, unsigned int diag_off
     //#
 }
 
-static void draw_ur(register struct pattern_data* pattern, unsigned int diag_offset) {
-    unsigned int index = pattern->index;
-
+static void draw_ur(register unsigned int index, unsigned int diag_offset) {
     unsigned int current_x = 17 + (2 * index);
     unsigned int current_y = 15 - index;
 
@@ -483,7 +476,39 @@ static void draw_ur(register struct pattern_data* pattern, unsigned int diag_off
     //#
 }
 
-void pattern_draw_start(unsigned int subindex) {
+static void draw_center(register unsigned int index) {
+    if (index >= 1) return;
+    if (current_subindex <= 1) return;
+
+    write_to_tile(current_map, 14, 15, hexagon_center_pos);
+    write_to_tile(current_map, 15, 15, hexagon_center_pos+1);
+    write_to_tile(current_map, 16, 15, hexagon_center_pos+2);
+    write_to_tile(current_map, 17, 15, hexagon_center_pos+3);
+
+    write_to_tile(current_map, 14, 16, hexagon_center_pos+4);
+    write_to_tile(current_map, 15, 16, hexagon_center_pos+5);
+    write_to_tile(current_map, 16, 16, hexagon_center_pos+6);
+    write_to_tile(current_map, 17, 16, hexagon_center_pos+7);
+
+    write_to_tile(current_map, 14, 17, hexagon_center_pos+8);
+    write_to_tile(current_map, 15, 17, hexagon_center_pos+9);
+    write_to_tile(current_map, 16, 17, hexagon_center_pos+10);
+    write_to_tile(current_map, 17, 17, hexagon_center_pos+11);
+
+}
+
+u8 load_index = 0;
+
+void pattern_draw_start(unsigned int subindex, u8 center_pattern_mask) {
+
+    // if (KEY_DOWN(Right)) {
+    //     load_index++;
+    // }
+    // if (KEY_DOWN(Left)) {
+    //     load_index--;
+    // }
+
+    // numdisplay_update(1, load_index);
 
     // Load the base tiles
     CpuFastSet(hexagon_reduced_img_bin, VRAM_BASE, COPY32 | 400);
@@ -498,7 +523,16 @@ void pattern_draw_start(unsigned int subindex) {
     int mid_subindex = subindex & 3; // Mid is 4 frames
     int vert_subindex = subindex & 7; // Vert is 8 frames
 
+    int center_subindex = 15 - subindex;
+
     //# Load current tiles
+
+    CpuFastSet( // Center tiles
+        hexagon_center_gen_img_bin + (center_pattern_mask * 64 * 12 * 14) + (center_subindex * 64 * 12),
+        TileToPtr(hexagon_center_pos),
+        COPY32 | 16 * 12
+    );
+
     CpuFastSet( // Mid BR
         pedge_mid_br_img_bin + (mid_subindex * 64 * 5),
         TileToPtr(pedge_mid_br_pos),
@@ -566,44 +600,48 @@ void pattern_draw_finish() {
     CpuFastSet(current_map, base_map, COPY32 | 256);
 }
 
-void pattern_draw(struct pattern_data* pattern) {
+void pattern_draw(u8 index, u8 mask) {
 
-    if (!pattern->active) return;
+    if (mask == 0) return;
 
-    if (pattern->a && pattern->b) {
-        draw_ur(pattern, 12);
-    } else if (pattern->a) {
-        draw_ur(pattern, 6);
-    } else if (pattern->b) {
-        draw_ur(pattern, 0);
+    if (index == 0 && current_subindex <= 1) return;
+
+    if (CHECK_MASK(mask, 1 | 2)) {
+        draw_ur(index, 12);
+    } else if (CHECK_MASK(mask, 1)) {
+        draw_ur(index, 6);
+    } else if (CHECK_MASK(mask, 2)) {
+        draw_ur(index, 0);
     }
 
-    if (pattern->b && pattern->c) {
-        draw_br(pattern, 12);
-    } else if (pattern->b) {
-        draw_br(pattern, 0);
-    } else if (pattern->c) {
-        draw_br(pattern, 6);
+    if (CHECK_MASK(mask, 2 | 4)) {
+        draw_br(index, 12);
+    } else if (CHECK_MASK(mask, 2)) {
+        draw_br(index, 0);
+    } else if (CHECK_MASK(mask, 4)) {
+        draw_br(index, 6);
     }
 
-    if (pattern->d && pattern->e) {
-        draw_bl(pattern, 12);
-    } else if (pattern->d) {
-        draw_bl(pattern, 6);
-    } else if (pattern->e) {
-        draw_bl(pattern, 0);
+    if (CHECK_MASK(mask, 8 | 16)) {
+        draw_bl(index, 12);
+    } else if (CHECK_MASK(mask, 8)) {
+        draw_bl(index, 6);
+    } else if (CHECK_MASK(mask, 16)) {
+        draw_bl(index, 0);
     }
 
-    if (pattern->e && pattern->f) {
-        draw_ul(pattern, 12);
-    } else if (pattern->e) {
-        draw_ul(pattern, 0);
-    } else if (pattern->f) {
-        draw_ul(pattern, 6);
+    if (CHECK_MASK(mask, 16 | 32)) {
+        draw_ul(index, 12);
+    } else if (CHECK_MASK(mask, 16)) {
+        draw_ul(index, 0);
+    } else if (CHECK_MASK(mask, 32)) {
+        draw_ul(index, 6);
     }
 
-    if (pattern->b)
-        draw_rm(pattern);
-    if (pattern->e)
-        draw_lm(pattern);
+    if (CHECK_MASK(mask, 2))
+        draw_rm(index);
+    if (CHECK_MASK(mask, 16))
+        draw_lm(index);
+
+    draw_center(index);
 }

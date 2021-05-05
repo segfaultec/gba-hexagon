@@ -1,5 +1,7 @@
 #pragma once
 
+#define CHECK_MASK(var, mask) (((var) & (mask)) == (mask))
+
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 
 #define REINT_CAST(type, var) *(type*)&var

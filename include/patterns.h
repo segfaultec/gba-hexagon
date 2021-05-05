@@ -13,8 +13,8 @@ struct pattern_data {
     bool f : 1;
 };
 
-void pattern_draw_start();
+void pattern_draw_start(unsigned int subindex, u8 center_pattern_mask);
 
 void pattern_draw_finish();
 
-void pattern_draw(struct pattern_data* pattern);
+void pattern_draw(u8 index, u8 pattern_mask);
