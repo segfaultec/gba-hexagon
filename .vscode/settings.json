@@ -18,7 +18,8 @@
         "lcd_impl.h": "c",
         "pedge_mid_img_bin.h": "c",
         "pedge_mid_bl_img_bin.h": "c",
-        "patterns.h": "c"
+        "patterns.h": "c",
+        "gba_interrupt.h": "c"
     },
     "search.exclude": {
         "**/node_modules": true,

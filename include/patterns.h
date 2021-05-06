@@ -8,8 +8,12 @@ void pq_init();
 u8 pq_get(u8);
 void pq_push(u8);
 
-void pattern_draw_start(unsigned int subindex, u8 center_pattern_mask);
+void swap_pattern_buffers();
 
-void pattern_draw_finish();
+void pattern_load_tiles(unsigned int subindex, u8 center_pattern_mask);
+
+void pattern_draw_start(unsigned int subindex);
 
 void pattern_draw(u8 index, u8 pattern_mask);
+
+void pattern_flush();

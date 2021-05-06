@@ -64,30 +64,51 @@ void game_init() {
 	player_data_init();
 	player_init(0);
 	pq_init();
-
-	pq_push(0);
-	pq_push(42);
-	pq_push(21);
 }
 
 int pattern_state = 0;
 
-void game_update() { 
+void game_vmain_update() {
+	pattern_draw_start(pattern_subindex);
+	for (int i=0; i<PATTERN_QUEUE_SIZE; i++) {
+		pattern_draw(i, pq_get(i));
+	}
+}
+
+void game_vblank_update() { 
+
+	pattern_load_tiles(pattern_subindex, pq_get(0));
+
+	pattern_flush();
+
+	swap_pattern_buffers();
 
 	if (true) {
 		if (pattern_subindex == 0) {
 			pattern_subindex = 15;
 			switch (pattern_state) {
 				case 0:
-					pq_push(0);
+					pq_push(0b111110);
 					pattern_state = 1;
 					break;
 				case 1:
-					pq_push(42);
+					pq_push(0b111101);
 					pattern_state = 2;
 					break;
 				case 2:
-					pq_push(21);
+					pq_push(0b111011);
+					pattern_state = 3;
+					break;
+				case 3:
+					pq_push(0b110111);
+					pattern_state = 4;
+					break;
+				case 4:
+					pq_push(0b101111);
+					pattern_state = 5;
+					break;
+				case 5:
+					pq_push(0b011111);
 					pattern_state = 0;
 					break;
 			}
@@ -97,14 +118,6 @@ void game_update() {
 	}
 
 	numdisplay_update(0, pattern_subindex);
-
-	pattern_draw_start(pattern_subindex, pq_get(0));
-
-	for (int i=0; i<PATTERN_QUEUE_SIZE; i++) {
-		pattern_draw(i, pq_get(i));
-	}
-
-	pattern_draw_finish();
 
 	struct calc_bg_rot_param bgparam ={
 		.ptr = BGAFFINE2,

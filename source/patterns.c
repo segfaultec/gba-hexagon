@@ -66,8 +66,19 @@ static const u32 pedge_vert_l_pos = 119; // size 2
 
 static const u32 hexagon_center_pos = 121; // size 12
 
+static u8 buffer_a[1024];
+static u8 buffer_b[1024];
+
+static u8* current_map = buffer_a;
+static u8* next_map = buffer_b;
+
+void swap_pattern_buffers() {
+    void* temp = current_map;
+    current_map = next_map;
+    next_map = temp;
+}
+
 static u8 current_subindex;
-static u8 current_map[1024];
 
 #define DRAW_MID_CHECK diag_offset != 0
 
@@ -496,21 +507,15 @@ static void draw_center(register unsigned int index) {
 
 }
 
-void pattern_draw_start(unsigned int subindex, u8 center_pattern_mask) {
-    // Load the base tiles
-    CpuFastSet(hexagon_reduced_img_bin, VRAM_BASE, COPY32 | 400);
-
-    // Initialise the WRAM map
-    // I can't mess about with VRAM directly too well, poking with unaligned data there straight up doesn't work.
-    // Instead I'm making a buffer in WRAM to mess about with, copying it whole into VRAM once I'm done.
-    CpuFastSet(hexagon_map_bin, current_map, COPY32 | 256);
-    current_subindex = subindex;
-
+void pattern_load_tiles(unsigned int subindex, u8 center_pattern_mask) {
     int diag_subindex = subindex; // Diagonal is 16 frames
     int mid_subindex = subindex & 3; // Mid is 4 frames
     int vert_subindex = subindex & 7; // Vert is 8 frames
 
     int center_subindex = 15 - subindex;
+
+    // Load the base tiles
+    CpuFastSet(hexagon_reduced_img_bin, VRAM_BASE, COPY32 | 400);
 
     //# Load current tiles
 
@@ -582,7 +587,15 @@ void pattern_draw_start(unsigned int subindex, u8 center_pattern_mask) {
     //#
 }
 
-void pattern_draw_finish() {
+void pattern_draw_start(unsigned int subindex) {
+    // Initialise the WRAM map
+    // I can't mess about with VRAM directly too well, poking with unaligned data there straight up doesn't work.
+    // Instead I'm making a buffer in WRAM to mess about with, copying it whole into VRAM once I'm done.
+    CpuFastSet(hexagon_map_bin, current_map, COPY32 | 256);
+    current_subindex = subindex;
+}
+
+void pattern_flush() {
     // Copy the WRAM map into VRAM
     CpuFastSet(current_map, base_map, COPY32 | 256);
 }

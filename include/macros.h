@@ -11,6 +11,8 @@
 
 #define INLINE static inline
 
+#define STOP_ALL() while (1) {Halt();}
+
 // #define ZERO_PTR(ptr) memset(ptr, 0, sizeof(*ptr))
 // #define struct16(name, inner) struct name {inner} PK_AL(2)
 
