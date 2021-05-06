@@ -1,5 +1,4 @@
 #include "hexagon_reduced_img_bin.h"
-#include "hexagon_reduced_pal_bin.h"
 #include "hexagon_map_bin.h"
 
 #include <gba_systemcalls.h>
@@ -19,8 +18,6 @@
 static fixed32 angle = 0;
 static unsigned int pattern_index = 1;
 static unsigned int pattern_subindex = 0;
-
-u8 pattern_table[8];
 
 void game_init() {
 	//# BG Init
@@ -66,36 +63,45 @@ void game_init() {
 
 	player_data_init();
 	player_init(0);
+	pq_init();
+
+	pq_push(0);
+	pq_push(42);
+	pq_push(21);
 }
+
+int pattern_state = 0;
 
 void game_update() { 
 
-	if (KEY_DOWN(Up)) {
+	if (true) {
 		if (pattern_subindex == 0) {
 			pattern_subindex = 15;
-			pattern_index--;
+			switch (pattern_state) {
+				case 0:
+					pq_push(0);
+					pattern_state = 1;
+					break;
+				case 1:
+					pq_push(42);
+					pattern_state = 2;
+					break;
+				case 2:
+					pq_push(21);
+					pattern_state = 0;
+					break;
+			}
 		} else {
 			pattern_subindex--;
 		}
 	}
-	if (KEY_DOWN(Down)) {
-		if (pattern_subindex == 15) {
-			pattern_subindex = 0;
-			pattern_index++;
-		} else {
-			pattern_subindex++;
-		}
-	}
-
-	pattern_table[0] = 42;
-	pattern_table[1] = 21;
 
 	numdisplay_update(0, pattern_subindex);
 
-	pattern_draw_start(pattern_subindex, pattern_table[0]);
+	pattern_draw_start(pattern_subindex, pq_get(0));
 
-	for (int i=0; i<8; i++) {
-		pattern_draw(i, pattern_table[i]);
+	for (int i=0; i<PATTERN_QUEUE_SIZE; i++) {
+		pattern_draw(i, pq_get(i));
 	}
 
 	pattern_draw_finish();
@@ -108,8 +114,8 @@ void game_update() {
 
 		// as close as the camera can get
 		// before showing the edge of the tilemap
-		//.scale = fx_from_float(1.15),
-		.scale = fx_from_float(1.0),
+		.scale = fx_from_float(1.15),
+		//.scale = fx_from_float(1.0),
 
 		.scr_x = fx_from_float(120),  
 		.scr_y = fx_from_float(80),
@@ -119,7 +125,7 @@ void game_update() {
 
 	player_update(angle, 0);
 
-	//angle += 5;
+	angle += 5;
 
 	if (KEY_DOWN(Select)) angle = 0;
 	

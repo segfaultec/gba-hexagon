@@ -2,16 +2,11 @@
 
 #include "types.h"
 
-struct pattern_data {
-    unsigned int index : 4;
-    bool active : 1;
-    bool a : 1;
-    bool b : 1;
-    bool c : 1;
-    bool d : 1;
-    bool e : 1;
-    bool f : 1;
-};
+#define PATTERN_QUEUE_SIZE 8
+
+void pq_init();
+u8 pq_get(u8);
+void pq_push(u8);
 
 void pattern_draw_start(unsigned int subindex, u8 center_pattern_mask);
 

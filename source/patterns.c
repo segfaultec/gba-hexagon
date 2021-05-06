@@ -16,7 +16,6 @@
 #include "pedge_diag_ul_img_bin.h"
 #include "pedge_diag_ur_img_bin.h"
 
-#include "hexagon_center_img_bin.h"
 #include "hexagon_center_gen_img_bin.h"
 
 #include "lcd_impl.h"
@@ -497,19 +496,7 @@ static void draw_center(register unsigned int index) {
 
 }
 
-u8 load_index = 0;
-
 void pattern_draw_start(unsigned int subindex, u8 center_pattern_mask) {
-
-    // if (KEY_DOWN(Right)) {
-    //     load_index++;
-    // }
-    // if (KEY_DOWN(Left)) {
-    //     load_index--;
-    // }
-
-    // numdisplay_update(1, load_index);
-
     // Load the base tiles
     CpuFastSet(hexagon_reduced_img_bin, VRAM_BASE, COPY32 | 400);
 
