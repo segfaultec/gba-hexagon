@@ -81,8 +81,6 @@ void game_vblank_update() {
 
 	pattern_flush();
 
-	swap_pattern_buffers();
-
 	if (true) {
 		if (pattern_subindex == 0) {
 			pattern_subindex = 15;

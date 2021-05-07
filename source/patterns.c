@@ -66,17 +66,7 @@ static const u32 pedge_vert_l_pos = 119; // size 2
 
 static const u32 hexagon_center_pos = 121; // size 12
 
-static u8 buffer_a[1024];
-static u8 buffer_b[1024];
-
-static u8* current_map = buffer_a;
-static u8* next_map = buffer_b;
-
-void swap_pattern_buffers() {
-    void* temp = current_map;
-    current_map = next_map;
-    next_map = temp;
-}
+static u8 current_map[1024];
 
 static u8 current_subindex;
 
