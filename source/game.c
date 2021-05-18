@@ -66,14 +66,60 @@ void game_init() {
 	pq_init();
 }
 
-int pattern_state = 0;
-
 void game_vmain_update() {
 	pattern_draw_start(pattern_subindex);
 	for (int i=0; i<PATTERN_QUEUE_SIZE; i++) {
 		pattern_draw(i, pq_get(i));
 	}
 }
+
+const u8 patterns[] = {
+	0b111110,
+	0b0, 0b0,
+	0b111101,
+	0b0, 0b0,
+	0b111011,
+	0b0, 0b0,
+	0b110111,
+	0b0, 0b0,
+	0b101111,
+	0b0, 0b0,
+	0b011111,
+	0b0, 0b0, 0b0,
+	0b111110,
+	0b111101,
+	0b111011,
+	0b110111,
+	0b101111,
+	0b011111,
+	0b0, 0b0, 0b0, 0b0,
+	0b0, 0b0, 0b0, 0b0,
+	0b101010,
+	0b010101,
+	0b101010,
+	0b010101,
+	0b101010,
+	0b010101,
+	0b101010,
+	0b010101,
+	0b0, 0b0, 0b0, 0b0,
+	0b0, 0b0, 0b0, 0b0,
+	0b111000,
+	0b0, 0b0,
+	0b000111,
+	0b0, 0b0,
+	0b111000,
+	0b0, 0b0,
+	0b000111,
+	0b0, 0b0,
+	0b111000,
+	0b0, 0b0,
+	0b000111,
+	0b0, 0b0, 0b0, 0b0,
+	0b0, 0b0, 0b0, 0b0,
+};
+
+int pattern_state = 0;
 
 void game_vblank_update() { 
 
@@ -84,31 +130,10 @@ void game_vblank_update() {
 	if (true) {
 		if (pattern_subindex == 0) {
 			pattern_subindex = 15;
-			switch (pattern_state) {
-				case 0:
-					pq_push(0b111110);
-					pattern_state = 1;
-					break;
-				case 1:
-					pq_push(0b111101);
-					pattern_state = 2;
-					break;
-				case 2:
-					pq_push(0b111011);
-					pattern_state = 3;
-					break;
-				case 3:
-					pq_push(0b110111);
-					pattern_state = 4;
-					break;
-				case 4:
-					pq_push(0b101111);
-					pattern_state = 5;
-					break;
-				case 5:
-					pq_push(0b011111);
-					pattern_state = 0;
-					break;
+			pq_push(patterns[pattern_state]);
+			pattern_state++;
+			if (pattern_state >= (sizeof(patterns) / sizeof(u8))) {
+				pattern_state = 0;
 			}
 		} else {
 			pattern_subindex--;
@@ -136,7 +161,7 @@ void game_vblank_update() {
 
 	player_update(angle, 0);
 
-	angle += 5;
+	angle += 3;
 
 	if (KEY_DOWN(Select)) angle = 0;
 	
